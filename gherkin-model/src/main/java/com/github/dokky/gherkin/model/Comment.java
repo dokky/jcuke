@@ -4,6 +4,6 @@ package com.github.dokky.gherkin.model;
 import lombok.Data;
 
 @Data
-public class Comment extends GherkinElement {
+public class Comment {
     private String value;
 }

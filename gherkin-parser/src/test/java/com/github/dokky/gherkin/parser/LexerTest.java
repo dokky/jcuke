@@ -1,27 +1,29 @@
 package com.github.dokky.gherkin.parser;
 
+import com.github.dokky.gherkin.lexer.Lexer;
+import com.github.dokky.gherkin.lexer.TokenType;
 import org.junit.Assert;
 
 public class LexerTest {
     private static void doTest(String text, String[] expectedTokens) {
-        Lexer lexer = new Lexer();
+        Lexer lexer = new Lexer(text);
         doTest(text, expectedTokens, lexer);
     }
 
     private static void doTest(String text, String[] expectedTokens, Lexer lexer) {
-        lexer.start(text);
+        lexer.parseNextToken();
         int idx = 0;
-        while (lexer.getMyCurrentToken() != null) {
-            if (lexer.getMyCurrentToken() != LexerTokenType.WHITESPACE) {
+        while (lexer.getCurrentTokenType() != null) {
+            if (lexer.getCurrentTokenType() != TokenType.WHITESPACE) {
                 if (idx >= expectedTokens.length) Assert.fail("Too many tokens");
                 String expectedTokenType = expectedTokens[idx++];
                 String expectedTokenText = expectedTokens[idx++];
-                String tokenName = lexer.getMyCurrentToken().toString();
+                String tokenName = lexer.getCurrentTokenType().toString();
                 Assert.assertEquals("Token name does not match", expectedTokenType, tokenName);
                 String tokenText = lexer.getCurrentTokenValue();
                 Assert.assertEquals("Token text does not match", expectedTokenText, tokenText);
             }
-            lexer.advance();
+            lexer.parseNextToken();
         }
 
         if (idx < expectedTokens.length) Assert.fail("Not enough tokens");

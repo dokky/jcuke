@@ -1,20 +1,23 @@
 package com.github.dokky.gherkin.parser;
 
+import com.github.dokky.gherkin.lexer.Lexer;
+import com.github.dokky.gherkin.lexer.TokenType;
 import lombok.extern.slf4j.Slf4j;
 
 import java.util.LinkedList;
 import java.util.List;
 
-import static com.github.dokky.gherkin.parser.LexerTokenType.*;
+import static com.github.dokky.gherkin.lexer.TokenType.*;
 
 @Slf4j
 public class Parser {
 
     public void parse(String text, FeatureHandler handler) {
-        Lexer lexer = new Lexer();
-        lexer.start(text);
-        LexerTokenType currentToken = null;
-        while ((currentToken = lexer.getMyCurrentToken()) != null) {
+        Lexer lexer = new Lexer(text);
+        lexer.parseNextToken();
+        TokenType currentToken = lexer.getCurrentTokenType();
+        while (currentToken != null) {
+            currentToken = lexer.getCurrentTokenType();
             if (currentToken == WHITESPACE) {
                 handler.onWhitespaces(lexer.getCurrentTokenValue());
             } else if (currentToken == TAG) {
@@ -38,44 +41,44 @@ public class Parser {
                 handler.onStep(lexer.getCurrentTokenValue(), getTextLine(lexer));
             } else if (currentToken == TABLE_CELL) {
                 List<String> rows = new LinkedList<String>();
-                int lastPosition = lexer.getMyPosition();
-                int lastState = lexer.getMyState();
-                while (lexer.getMyCurrentToken() == TABLE_CELL || lexer.getMyCurrentToken() == PIPE) {
+                int lastPosition = lexer.getCurrentPosition();
+                int lastState = lexer.getState();
+                while (lexer.getCurrentTokenType() == TABLE_CELL || lexer.getCurrentTokenType() == PIPE) {
 
-                    if (lexer.getMyCurrentToken() == TABLE_CELL) {
+                    if (lexer.getCurrentTokenType() == TABLE_CELL) {
                         rows.add(lexer.getCurrentTokenValue());
                     }
 
-                    lastPosition = lexer.getMyPosition();
-                    lastState = lexer.getMyState();
-                    lexer.advance();
+                    lastPosition = lexer.getCurrentPosition();
+                    lastState = lexer.getState();
+                    lexer.parseNextToken();
 
-                    if ((lexer.getMyCurrentToken() == WHITESPACE || lexer.getMyCurrentToken() == COMMENT) && lexer.hasNewLine(lastPosition, lexer.getMyPosition())) {
+                    if ((lexer.getCurrentTokenType() == WHITESPACE || lexer.getCurrentTokenType() == COMMENT) && lexer.hasNewLine(lastPosition, lexer.getCurrentPosition())) {
                         handler.onTableRow(rows.toArray(new String[rows.size()]));
                         rows.clear();
                     }
-                    if (lexer.getMyCurrentToken() == WHITESPACE) {
-                        lexer.advance();
+                    if (lexer.getCurrentTokenType() == WHITESPACE) {
+                        lexer.parseNextToken();
                     }
                 }
-                lexer.setMyPosition(lastPosition); // return position back to last text occurrence
-                lexer.setMyState(lastState);
+                lexer.setCurrentPosition(lastPosition); // return position back to last text occurrence
+                lexer.setState(lastState);
             } else if (currentToken == FEATURE_KEYWORD) {
                 handler.onFeature(getTextLine(lexer), getTextBlock(lexer));
             } else if (currentToken == TEXT || currentToken == COLON) {
                 handler.onText(lexer.getCurrentTokenValue());
             }
 
-            lexer.advance();
+            lexer.parseNextToken();
         }
     }
 
     private String getTextLine(Lexer lexer) {
-        int tokenPosition = lexer.getMyPosition();
+        int tokenPosition = lexer.getCurrentPosition();
         StringBuilder text = new StringBuilder();
-        while (lexer.getMyCurrentToken() != COMMENT && !lexer.hasNewLine(tokenPosition, lexer.getMyPosition())) {
-            lexer.advance();
-            if (lexer.getMyCurrentToken() == TEXT) {
+        while (lexer.getCurrentTokenType() != COMMENT && !lexer.hasNewLine(tokenPosition, lexer.getCurrentPosition())) {
+            lexer.parseNextToken();
+            if (lexer.getCurrentTokenType() == TEXT) {
                 text.append(lexer.getCurrentTokenValue());
             }
         }
@@ -83,21 +86,21 @@ public class Parser {
     }
 
     private String getTextBlock(Lexer lexer) {
-        int lastPosition = lexer.getMyPosition();
-        int lastState = lexer.getMyState();
+        int lastPosition = lexer.getCurrentPosition();
+        int lastState = lexer.getState();
         StringBuilder text = new StringBuilder();
-        while (lexer.getMyCurrentToken() != null && !lexer.getMyCurrentToken().isKeyword()) {
-            lexer.advance();
-            if (lexer.getMyCurrentToken() == TEXT) {
+        while (lexer.getCurrentTokenType() != null && !lexer.getCurrentTokenType().isKeyword()) {
+            lexer.parseNextToken();
+            if (lexer.getCurrentTokenType() == TEXT) {
                 text.append(lexer.getCurrentTokenValue());
-                lastPosition = lexer.getMyPosition();
-                lastState = lexer.getMyState();
-            } else if (lexer.getMyCurrentToken() == WHITESPACE) {
+                lastPosition = lexer.getCurrentPosition();
+                lastState = lexer.getState();
+            } else if (lexer.getCurrentTokenType() == WHITESPACE) {
                 text.append('\n');
             }
         }
-        lexer.setMyPosition(lastPosition); // return position back to last text occurrence
-        lexer.setMyState(lastState);
+        lexer.setCurrentPosition(lastPosition); // return position back to last text occurrence
+        lexer.setState(lastState);
         return text.length() == 0 ? null : text.toString().trim();
     }
 }

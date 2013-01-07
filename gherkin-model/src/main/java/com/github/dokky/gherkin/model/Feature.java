@@ -8,7 +8,7 @@ import java.util.LinkedList;
 import java.util.List;
 
 @Data
-public class Feature extends GherkinElement {
+public class Feature {
 
     private final @NonNull String name;
     private                String description;

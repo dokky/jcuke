@@ -5,7 +5,7 @@ import lombok.Data;
 import lombok.NonNull;
 
 @Data
-public class Step extends GherkinElement {
+public class Step {
     private final @NonNull String   stepType;
     private final @NonNull String   step;
     private                Table    table;

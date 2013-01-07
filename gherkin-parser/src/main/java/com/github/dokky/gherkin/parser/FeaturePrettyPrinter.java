@@ -1,6 +1,6 @@
 package com.github.dokky.gherkin.parser;
 
-public class PrettyPrinter implements FeatureHandler {
+public class FeaturePrettyPrinter implements FeatureHandler {
     @Override
     public void onFeature(String name, String description) {
         System.out.println("[Feature: ][" + name + "]");

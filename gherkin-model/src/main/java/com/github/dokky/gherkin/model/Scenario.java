@@ -8,7 +8,7 @@ import java.util.LinkedList;
 import java.util.List;
 
 @Data
-public class Scenario extends GherkinElement {
+public class Scenario {
     private final @NonNull String name;
     private final List<Tag>        tags  = new LinkedList<Tag>();
     private final LinkedList<Step> steps = new LinkedList<Step>();
