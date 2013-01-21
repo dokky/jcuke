@@ -6,7 +6,8 @@ import org.junit.Test;
 public class ParserTest {
     @Test
     public void testParse() throws Exception {
-        Parser p = new Parser();
+        DebugHandler handler = new DebugHandler();
+        Parser p = new Parser(handler);
         String feature = "Using step definitions from: '../steps'\n" +
                          "\n" +
                          "@tag1 @tag2 @6125\n" +
@@ -63,8 +64,7 @@ public class ParserTest {
                          "    Scenario: MyScenario X\n" +
                          "        When as user 'admin' I send a GET to '/api?startDate=2001-01-01&endDate=2001-01-01&a@b.cd'\n" +
                          "        Then skip\n";
-        DebugHandler handler = new DebugHandler();
-        p.parse(feature, handler);
+        p.parse(feature);
         String result = handler.getResult();
         System.out.println(result);
         String expected = "[Using step definitions from: '../steps'][\n" +

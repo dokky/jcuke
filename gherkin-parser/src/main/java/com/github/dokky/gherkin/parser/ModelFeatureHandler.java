@@ -129,16 +129,28 @@ public class ModelFeatureHandler implements FeatureHandler {
     }
 
     public void onComment(String comment) {
-        ModelFeatureHandler.log.info(comment);
+//        log.info(comment);
     }
 
     public void onText(String text) {
-        ModelFeatureHandler.log.warn("undefined:" + text);
+        if (text.startsWith("Using step definitions from:")) { // freshen dialect
+
+        } else {
+            log.warn("undefined:" + text);
+        }
     }
 
     @Override
     public void onWhitespaces(String whitespaces) {
 
+    }
+
+    @Override
+    public void start() {
+    }
+
+    @Override
+    public void end() {
     }
 
     private Feature getFeature() {

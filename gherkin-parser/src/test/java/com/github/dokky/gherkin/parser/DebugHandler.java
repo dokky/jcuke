@@ -86,4 +86,14 @@ public class DebugHandler implements FeatureHandler {
     public void onWhitespaces(String whitespaces) {
         out.print(decorate(whitespaces));
     }
+
+    @Override
+    public void start() {
+
+    }
+
+    @Override
+    public void end() {
+
+    }
 }

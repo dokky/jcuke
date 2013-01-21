@@ -23,6 +23,10 @@ public enum TokenType {
         return keyword;
     }
 
+    public boolean isScenarioKeyword() {
+        return this == BACKGROUND_KEYWORD || this == SCENARIO_KEYWORD || this == SCENARIO_OUTLINE_KEYWORD;
+    }
+
     public static Map<String, TokenType> KEYWORDS = new ImmutableMap.Builder<String, TokenType>()
                                                             .put("Feature", FEATURE_KEYWORD)
                                                             .put("Background", BACKGROUND_KEYWORD)

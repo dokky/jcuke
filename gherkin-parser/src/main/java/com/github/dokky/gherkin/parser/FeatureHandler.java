@@ -24,4 +24,8 @@ public interface FeatureHandler {
     public void onText(String text);
 
     public void onWhitespaces(String whitespaces);
+
+    public void start();
+
+    public void end();
 }

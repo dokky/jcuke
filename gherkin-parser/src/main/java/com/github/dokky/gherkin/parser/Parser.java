@@ -11,9 +11,15 @@ import static com.github.dokky.gherkin.lexer.TokenType.*;
 
 @Slf4j
 public class Parser {
+    private FeatureHandler handler;
 
-    public void parse(String text, FeatureHandler handler) {
+    public Parser(FeatureHandler handler) {
+        this.handler = handler;
+    }
+
+    public void parse(String text) {
         Lexer lexer = new Lexer(text);
+        handler.start();
         lexer.parseNextToken();
         TokenType currentToken = lexer.getCurrentTokenType();
         while (currentToken != null) {
@@ -64,13 +70,14 @@ public class Parser {
                 lexer.setCurrentPosition(lastPosition); // return position back to last text occurrence
                 lexer.setState(lastState);
             } else if (currentToken == FEATURE_KEYWORD) {
-                handler.onFeature(getTextLine(lexer), getTextBlock(lexer));
+                handler.onFeature(getTextLine(lexer), collectTextItemsUntilScenarioStarts(lexer));
             } else if (currentToken == TEXT || currentToken == COLON) {
                 handler.onText(lexer.getCurrentTokenValue());
             }
 
             lexer.parseNextToken();
         }
+        handler.end();
     }
 
     private String getTextLine(Lexer lexer) {
@@ -85,11 +92,11 @@ public class Parser {
         return text.length() == 0 ? null : text.toString();
     }
 
-    private String getTextBlock(Lexer lexer) {
+    private String collectTextItemsUntilScenarioStarts(Lexer lexer) {
         int lastPosition = lexer.getCurrentPosition();
         int lastState = lexer.getState();
         StringBuilder text = new StringBuilder();
-        while (lexer.getCurrentTokenType() != null && !lexer.getCurrentTokenType().isKeyword()) {
+        while (lexer.getCurrentTokenType() != null && !lexer.getCurrentTokenType().isScenarioKeyword()) {
             lexer.parseNextToken();
             if (lexer.getCurrentTokenType() == TEXT) {
                 text.append(lexer.getCurrentTokenValue());

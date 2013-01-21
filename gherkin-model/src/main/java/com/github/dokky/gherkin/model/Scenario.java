@@ -2,18 +2,17 @@ package com.github.dokky.gherkin.model;
 
 
 import lombok.Data;
-import lombok.NonNull;
 
 import java.util.LinkedList;
 import java.util.List;
 
 @Data
 public class Scenario {
-    private final @NonNull String name;
-    private final List<Tag>        tags  = new LinkedList<Tag>();
-    private final LinkedList<Step> steps = new LinkedList<Step>();
+    private final String name;
+    private final List<Tag>        tags  = new LinkedList<>();
+    private final LinkedList<Step> steps = new LinkedList<>();
 
     public Step getLastStep() {
-        return steps.getLast();
+        return steps.size() != 0 ? steps.getLast() : null;
     }
 }
