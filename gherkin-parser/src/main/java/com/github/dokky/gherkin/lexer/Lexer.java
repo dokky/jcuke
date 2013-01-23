@@ -23,7 +23,7 @@ public final class Lexer {
     private static final int STATE_AFTER_STEP_KEYWORD = 3;
     private static final int STATE_TABLE              = 2;
 
-    private static final String PYSTRING = "\"\"\"";
+    public static final String PYSTRING = "\"\"\"";
 
     private static final List<String> KEYWORDS = buildKeywords();
 
@@ -144,7 +144,9 @@ public final class Lexer {
         while (currentPosition < endOffset && buffer.charAt(currentPosition) != '\n') {
             currentPosition++;
         }
-        state = STATE_DEFAULT;
+        if (state != STATE_TABLE) {
+            state = STATE_DEFAULT;
+        }
     }
 
     private void parseToEolOrComment() {
