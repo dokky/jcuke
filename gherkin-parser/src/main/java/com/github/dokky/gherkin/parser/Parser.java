@@ -33,7 +33,7 @@ public class Parser {
             } else if (currentToken == PYSTRING) {
                 handler.onPyString(lexer.getCurrentTokenValue());
             } else if (currentToken == SCENARIO_KEYWORD || currentToken == SCENARIO_OUTLINE_KEYWORD || currentToken == BACKGROUND_KEYWORD || currentToken == EXAMPLES_KEYWORD) {
-                String name = getTextLine(lexer);
+                String name = getNextTextToken(lexer);
                 if (currentToken == SCENARIO_KEYWORD) {
                     handler.onScenario(name);
                 } else if (currentToken == SCENARIO_OUTLINE_KEYWORD) {
@@ -44,33 +44,37 @@ public class Parser {
                     handler.onExamples(name);
                 }
             } else if (currentToken == STEP_KEYWORD) {
-                handler.onStep(lexer.getCurrentTokenValue(), getTextLine(lexer));
+                handler.onStep(lexer.getCurrentTokenValue(), getNextTextToken(lexer));
             } else if (currentToken == TABLE_CELL) {
-                List<String> rows = new LinkedList<String>();
-                int lastPosition = lexer.getCurrentPosition();
-                int lastState = lexer.getState();
-                while (lexer.getCurrentTokenType() == TABLE_CELL || lexer.getCurrentTokenType() == PIPE) {
+                List<String> row = new LinkedList<String>();
+                while (currentToken != null &&
+                       (currentToken == TABLE_CELL ||
+                        currentToken == PIPE ||
+                        currentToken == WHITESPACE ||
+                        currentToken == COMMENT)) {
 
-                    if (lexer.getCurrentTokenType() == TABLE_CELL) {
-                        rows.add(lexer.getCurrentTokenValue());
+                    String value = lexer.getCurrentTokenValue();
+                    if (currentToken == TABLE_CELL) {
+                        row.add(value);
+                    } else if (currentToken == COMMENT) {
+                        if (!row.isEmpty()) {
+                            handler.onTableRow(row.toArray(new String[row.size()]));
+                            row.clear();
+                        }
+                        handler.onComment(value);
+                    } else if (currentToken == WHITESPACE) {
+                        if (value.contains("\n") && !row.isEmpty()) {
+                            handler.onTableRow(row.toArray(new String[row.size()]));
+                            row.clear();
+                        }
+                        handler.onWhitespaces(value);
                     }
-
-                    lastPosition = lexer.getCurrentPosition();
-                    lastState = lexer.getState();
                     lexer.parseNextToken();
-
-                    if ((lexer.getCurrentTokenType() == WHITESPACE || lexer.getCurrentTokenType() == COMMENT) && lexer.hasNewLine(lastPosition, lexer.getCurrentPosition())) {
-                        handler.onTableRow(rows.toArray(new String[rows.size()]));
-                        rows.clear();
-                    }
-                    if (lexer.getCurrentTokenType() == WHITESPACE) {
-                        lexer.parseNextToken();
-                    }
+                    currentToken = lexer.getCurrentTokenType();
                 }
-                lexer.setCurrentPosition(lastPosition); // return position back to last text occurrence
-                lexer.setState(lastState);
+                continue; // go to main loop
             } else if (currentToken == FEATURE_KEYWORD) {
-                handler.onFeature(getTextLine(lexer), collectTextItemsUntilScenarioStarts(lexer));
+                handler.onFeature(getNextTextToken(lexer), collectTextItemsUntilScenarioStarts(lexer));
             } else if (currentToken == TEXT || currentToken == COLON) {
                 handler.onText(lexer.getCurrentTokenValue());
             }
@@ -80,34 +84,35 @@ public class Parser {
         handler.end();
     }
 
-    private String getTextLine(Lexer lexer) {
-        int tokenPosition = lexer.getCurrentPosition();
-        StringBuilder text = new StringBuilder();
-        while (lexer.getCurrentTokenType() != COMMENT && !lexer.hasNewLine(tokenPosition, lexer.getCurrentPosition())) {
-            lexer.parseNextToken();
+    private String getNextTextToken(Lexer lexer) {
+        int previousPosition = lexer.getCurrentPosition();
+        lexer.parseNextToken();
+        while (lexer.getCurrentTokenType() == COLON || lexer.getCurrentTokenType() == TEXT || lexer.getCurrentTokenType() == WHITESPACE || lexer.getCurrentTokenType() == COMMENT) {
             if (lexer.getCurrentTokenType() == TEXT) {
-                text.append(lexer.getCurrentTokenValue());
+                return lexer.getCurrentTokenValue();
+            } else if (lexer.getCurrentTokenType() == COMMENT || lexer.hasNewLine(previousPosition, lexer.getCurrentPosition())) {
+                lexer.setCurrentPosition(previousPosition); // return one token back
+                break;
             }
+            previousPosition = lexer.getCurrentPosition();
+            lexer.parseNextToken();
         }
-        return text.length() == 0 ? null : text.toString();
+        return null;
     }
 
     private String collectTextItemsUntilScenarioStarts(Lexer lexer) {
         int lastPosition = lexer.getCurrentPosition();
-        int lastState = lexer.getState();
         StringBuilder text = new StringBuilder();
         while (lexer.getCurrentTokenType() != null && !lexer.getCurrentTokenType().isScenarioKeyword()) {
             lexer.parseNextToken();
             if (lexer.getCurrentTokenType() == TEXT) {
                 text.append(lexer.getCurrentTokenValue());
                 lastPosition = lexer.getCurrentPosition();
-                lastState = lexer.getState();
             } else if (lexer.getCurrentTokenType() == WHITESPACE) {
                 text.append('\n');
             }
         }
         lexer.setCurrentPosition(lastPosition); // return position back to last text occurrence
-        lexer.setState(lastState);
         return text.length() == 0 ? null : text.toString().trim();
     }
 }
