@@ -28,7 +28,9 @@ public final class Lexer {
     private static final int CONTEXT_EXAMPLES         = 5;
     private              int context                  = CONTEXT_ROOT;
 
+    // todo replace with state
     private boolean firstStepInScenarioFound = false;
+    private boolean afterFeatureKeyword      = false;
     private boolean afterStepKeyword         = false;
     private boolean afterScenarioKeyword     = false;
     private boolean inTable                  = false;
@@ -53,6 +55,7 @@ public final class Lexer {
         afterStepKeyword = false;
         afterScenarioKeyword = false;
         inTable = false;
+        afterFeatureKeyword = false;
     }
 
     public String getCurrentTokenValue() {
@@ -72,6 +75,7 @@ public final class Lexer {
             while (currentPosition < endOffset && Character.isWhitespace(buffer.charAt(currentPosition))) {
                 if (buffer.charAt(currentPosition) == '\n') {
                     // reset flags
+                    afterFeatureKeyword = false;
                     afterScenarioKeyword = false;
                     afterStepKeyword = false;
                     inTable = false;
@@ -94,6 +98,7 @@ public final class Lexer {
                     currentTokenType = TokenType.FEATURE_KEYWORD;
 
                     context = CONTEXT_FEATURE;
+                    afterFeatureKeyword = true;
                     return;
                 }
             }
@@ -214,7 +219,11 @@ public final class Lexer {
 
 
         currentTokenType = TokenType.TEXT;
-        parseToEolOrComment();
+        if (afterFeatureKeyword) {
+            parseToEol();
+        } else {
+            parseToEolOrComment();
+        }
     }
 
     private void parsePyString() {
