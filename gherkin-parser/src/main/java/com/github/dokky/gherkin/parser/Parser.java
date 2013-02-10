@@ -29,7 +29,12 @@ public class Parser {
             } else if (currentToken == TAG) {
                 handler.onTag(lexer.getCurrentTokenValue());
             } else if (currentToken == COMMENT) {
-                handler.onComment(lexer.getCurrentTokenValue());
+                TokenType previousTokenType = lexer.getPreviousTokenType();
+                boolean hasNewLineBefore = true;
+                if (previousTokenType != null) {
+                    hasNewLineBefore = previousTokenType == WHITESPACE && lexer.hasNewLine(lexer.getPreviousTokenStartPosition(), lexer.getCurrentTokenStartPosition());
+                }
+                handler.onComment(lexer.getCurrentTokenValue(), hasNewLineBefore);
             } else if (currentToken == PYSTRING) {
                 handler.onPyString(lexer.getCurrentTokenValue());
             } else if (currentToken == SCENARIO_KEYWORD || currentToken == SCENARIO_OUTLINE_KEYWORD || currentToken == BACKGROUND_KEYWORD || currentToken == EXAMPLES_KEYWORD) {
@@ -61,7 +66,12 @@ public class Parser {
                             handler.onTableRow(row.toArray(new String[row.size()]));
                             row.clear();
                         }
-                        handler.onComment(value);
+                        TokenType previousTokenType = lexer.getPreviousTokenType();
+                        boolean hasNewLineBefore = true;
+                        if (previousTokenType != null) {
+                            hasNewLineBefore = previousTokenType == WHITESPACE && lexer.hasNewLine(lexer.getPreviousTokenStartPosition(), lexer.getCurrentTokenStartPosition());
+                        }
+                        handler.onComment(lexer.getCurrentTokenValue(), hasNewLineBefore);
                     } else if (currentToken == WHITESPACE) {
                         if (value.contains("\n") && !row.isEmpty()) {
                             handler.onTableRow(row.toArray(new String[row.size()]));

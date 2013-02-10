@@ -73,7 +73,7 @@ public class DebugHandler implements FeatureHandler {
     }
 
     @Override
-    public void onComment(String comment) {
+    public void onComment(String comment, boolean hasNewLineBefore) {
         out.print(decorate(comment));
     }
 

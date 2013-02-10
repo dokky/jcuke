@@ -14,7 +14,7 @@ import java.util.List;
 public class ScannerTest {
     @Test
     public void testFile() {
-        File file = new File("D:\\projects\\msdp\\bdd\\src\\msdptest\\aaa\\notif\\targeting_with_account_id.feature");
+        File file = new File("D:\\projects\\msdp\\bdd\\src\\msdptest\\aps\\security.feature");
         formatAndAssert(file);
 
     }
@@ -39,6 +39,8 @@ public class ScannerTest {
         String original = scanner.readFile(file);
         parser.parse(original);
         String formatted = handler.getResult();
+        System.err.println(formatted);
+
         String expected = removeWhitespaces(original);
         String actual = removeWhitespaces(formatted);
         Assert.assertEquals("Formatted not equal original: " + diff(original, formatted), expected, actual);

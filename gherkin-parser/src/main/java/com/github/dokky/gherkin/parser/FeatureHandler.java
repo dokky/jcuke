@@ -19,7 +19,7 @@ public interface FeatureHandler {
 
     public void onPyString(String pyString);
 
-    public void onComment(String comment);
+    public void onComment(String comment, boolean hasNewLineBefore);
 
     public void onText(String text);
 

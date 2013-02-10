@@ -128,7 +128,7 @@ public class ModelFeatureHandler implements FeatureHandler {
         }
     }
 
-    public void onComment(String comment) {
+    public void onComment(String comment, boolean hasNewLineBefore) {
 //        log.info(comment);
     }
 

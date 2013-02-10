@@ -16,9 +16,10 @@ public final class Lexer {
     protected int          endOffset;
     private   int          currentPosition;
     private   int          currentTokenStartPosition;
+    private   int          previousTokenStartPosition;
 
     private TokenType currentTokenType;
-
+    private TokenType previousTokenType;
 
     private static final int CONTEXT_ROOT             = 0;
     private static final int CONTEXT_FEATURE          = 1;
@@ -49,6 +50,7 @@ public final class Lexer {
         this.buffer = buffer;
         this.startOffset = startOffset;
         this.endOffset = endOffset;
+        previousTokenStartPosition = startOffset;
         currentPosition = startOffset;
         context = CONTEXT_ROOT;
         firstStepInScenarioFound = false;
@@ -62,11 +64,21 @@ public final class Lexer {
         return buffer.subSequence(currentTokenStartPosition, currentPosition).toString();
     }
 
+    public String getPreviousTokenValue() {
+        if (previousTokenStartPosition > 0 && previousTokenStartPosition != currentTokenStartPosition) {
+            return buffer.subSequence(previousTokenStartPosition, currentTokenStartPosition).toString();
+        } else {
+            return null;
+        }
+    }
+
     public void parseNextToken() {
         if (currentPosition >= endOffset) {
             currentTokenType = null;
             return;
         }
+        previousTokenType = currentTokenType;
+        previousTokenStartPosition = currentTokenStartPosition;
         currentTokenStartPosition = currentPosition;
         char c = buffer.charAt(currentPosition);
 
