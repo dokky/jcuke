@@ -1,26 +1,33 @@
 package com.github.dokky.gherkin.parser;
 
-import com.github.dokky.gherkin.lexer.Lexer;
-import com.github.dokky.gherkin.lexer.TokenType;
 import org.junit.Assert;
 
+import com.github.dokky.gherkin.FileUtils;
+import com.github.dokky.gherkin.lexer.Lexer;
+import com.github.dokky.gherkin.lexer.TokenType;
+
 public class LexerTest {
-    private static void doTest(String text, String[] expectedTokens) {
-        Lexer lexer = new Lexer(text);
-        doTest(text, expectedTokens, lexer);
-    }
+    final static String directory = "gherkin-parser/src/test/resources/lexer";
+
 
     private static void doTest(String text, String expectedTokens) {
-        Lexer lexer = new Lexer(text);
-        doTest(text, expectedTokens.split(";"), lexer);
+        doTest(text, expectedTokens.split(";"));
     }
 
-    private static void doTest(String text, String[] expectedTokens, Lexer lexer) {
+    private static void doTest2(String text, String expectedTokens) {
+        doTest2(text, expectedTokens.split("\n"));
+    }
+
+
+    private static void doTest(String text, String[] expectedTokens) {
+        Lexer lexer = new Lexer(text);
         lexer.parseNextToken();
         int idx = 0;
         while (lexer.getCurrentTokenType() != null) {
             if (lexer.getCurrentTokenType() != TokenType.WHITESPACE) {
-                if (idx >= expectedTokens.length) Assert.fail("Too many tokens");
+                if (idx >= expectedTokens.length) {
+                    Assert.fail("Too many tokens");
+                }
                 String expectedTokenType = expectedTokens[idx++];
                 String tokenName = lexer.getCurrentTokenType().toString();
                 Assert.assertEquals("Token name does not match at position: " + idx, expectedTokenType, tokenName);
@@ -32,7 +39,46 @@ public class LexerTest {
             lexer.parseNextToken();
         }
 
-        if (idx < expectedTokens.length) Assert.fail("Not enough tokens");
+        if (idx < expectedTokens.length) {
+            Assert.fail("Not enough tokens");
+        }
+    }
+
+    private static void doTest2(String text, String[] expectedTokens) {
+        Lexer lexer = new Lexer(text);
+        lexer.parseNextToken();
+        int line = 0;
+        while (lexer.getCurrentTokenType() != null) {
+            if (lexer.getCurrentTokenType() != TokenType.WHITESPACE) {
+
+                String expected = expectedTokens[line++];
+                String actual = lexer.getCurrentTokenType().toString() + "=" + lexer.getCurrentTokenValue();
+                Assert.assertEquals("Token name does not match at line: " + line, expected, actual);
+
+            }
+            lexer.parseNextToken();
+        }
+
+        if (line < expectedTokens.length) {
+            Assert.fail("Not enough tokens");
+        }
+    }
+
+    private static String breakDownToTokens(String text) {
+        StringBuilder out = new StringBuilder();
+        Lexer lexer = new Lexer(text);
+        lexer.parseNextToken();
+        while (lexer.getCurrentTokenType() != null) {
+            if (lexer.getCurrentTokenType() != TokenType.WHITESPACE) {
+                out.append(lexer.getCurrentTokenType().toString());
+                out.append("=");
+                out.append(lexer.getCurrentTokenValue());
+                out.append("\n");
+            }
+            lexer.parseNextToken();
+        }
+
+        return out.toString();
     }
 
 
@@ -54,15 +100,20 @@ public class LexerTest {
         doTest("#comment", new String[]{"COMMENT", "#comment",});
         doTest("#comment#comment", new String[]{"COMMENT", "#comment#comment",});
         doTest("#comment #comment", new String[]{"COMMENT", "#comment #comment",});
-        doTest("Feature: XYZ\nBackground:\nGiven table:\n|a| #comment", "FEATURE_KEYWORD;Feature:;TEXT;XYZ;BACKGROUND_KEYWORD;Background:;STEP_KEYWORD;Given;TEXT;table:;PIPE;|;TABLE_CELL;a;PIPE;|;COMMENT;#comment");
-        doTest("Feature: XYZ\nBackground:\nGiven table:\n|a| #comment\n|a|\n", "FEATURE_KEYWORD;Feature:;TEXT;XYZ;BACKGROUND_KEYWORD;Background:;STEP_KEYWORD;Given;TEXT;table:;PIPE;|;TABLE_CELL;a;PIPE;|;COMMENT;#comment;PIPE;|;TABLE_CELL;a;PIPE;|");
-        doTest("Feature: XYZ\nBackground:\nGiven table:\n|a| #comment\n|a|", "FEATURE_KEYWORD;Feature:;TEXT;XYZ;BACKGROUND_KEYWORD;Background:;STEP_KEYWORD;Given;TEXT;table:;PIPE;|;TABLE_CELL;a;PIPE;|;COMMENT;#comment;PIPE;|;TABLE_CELL;a;PIPE;|");
-        doTest("Feature: XYZ\nBackground:\nGiven table:\n|a|\n#comment\n|a|", "FEATURE_KEYWORD;Feature:;TEXT;XYZ;BACKGROUND_KEYWORD;Background:;STEP_KEYWORD;Given;TEXT;table:;PIPE;|;TABLE_CELL;a;PIPE;|;COMMENT;#comment;PIPE;|;TABLE_CELL;a;PIPE;|");
+        doTest("Feature: XYZ\nBackground:\nGiven table:\n|a| #comment",
+               "FEATURE_KEYWORD;Feature:;TEXT;XYZ;BACKGROUND_KEYWORD;Background:;STEP_KEYWORD;Given;TEXT;table:;PIPE;|;TABLE_CELL;a;PIPE;|;COMMENT;#comment");
+        doTest("Feature: XYZ\nBackground:\nGiven table:\n|a| #comment\n|a|\n",
+               "FEATURE_KEYWORD;Feature:;TEXT;XYZ;BACKGROUND_KEYWORD;Background:;STEP_KEYWORD;Given;TEXT;table:;PIPE;|;TABLE_CELL;a;PIPE;|;COMMENT;#comment;PIPE;|;TABLE_CELL;a;PIPE;|");
+        doTest("Feature: XYZ\nBackground:\nGiven table:\n|a| #comment\n|a|",
+               "FEATURE_KEYWORD;Feature:;TEXT;XYZ;BACKGROUND_KEYWORD;Background:;STEP_KEYWORD;Given;TEXT;table:;PIPE;|;TABLE_CELL;a;PIPE;|;COMMENT;#comment;PIPE;|;TABLE_CELL;a;PIPE;|");
+        doTest("Feature: XYZ\nBackground:\nGiven table:\n|a|\n#comment\n|a|",
+               "FEATURE_KEYWORD;Feature:;TEXT;XYZ;BACKGROUND_KEYWORD;Background:;STEP_KEYWORD;Given;TEXT;table:;PIPE;|;TABLE_CELL;a;PIPE;|;COMMENT;#comment;PIPE;|;TABLE_CELL;a;PIPE;|");
     }
 
     @org.junit.Test
     public void testTable() throws Exception {
-        doTest("Feature: XYZ\nBackground:\nGiven table:\n|a|\n|a|", "FEATURE_KEYWORD;Feature:;TEXT;XYZ;BACKGROUND_KEYWORD;Background:;STEP_KEYWORD;Given;TEXT;table:;PIPE;|;TABLE_CELL;a;PIPE;|;PIPE;|;TABLE_CELL;a;PIPE;|");
+        doTest("Feature: XYZ\nBackground:\nGiven table:\n|a|\n|a|",
+               "FEATURE_KEYWORD;Feature:;TEXT;XYZ;BACKGROUND_KEYWORD;Background:;STEP_KEYWORD;Given;TEXT;table:;PIPE;|;TABLE_CELL;a;PIPE;|;PIPE;|;TABLE_CELL;a;PIPE;|");
     }
 
     @org.junit.Test
@@ -182,5 +233,19 @@ public class LexerTest {
                "STEP_KEYWORD;Given;TEXT;B;");
 
     }
+
+    @org.junit.Test
+    public void testTableAndTags() throws Exception {
+        readFeatureFileFromFileAndMatchTokens("table_and_tags");
+    }
+
+    private void readFeatureFileFromFileAndMatchTokens(String name) {
+        doTest2(FileUtils.readFile(directory, name + ".feature"), FileUtils.readFile(directory, name + ".tokens"));
+    }
+
+//    public static void main(String[] args) {
+//
+//        System.out.println(breakDownToTokens(FileUtils.readFile(directory, "table_and_tags.feature")));
+//    }
 
 }

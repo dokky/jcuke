@@ -1,9 +1,10 @@
 package com.github.dokky.gherkin.parser;
 
-import com.github.dokky.gherkin.lexer.Lexer;
-
+import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
+
+import com.github.dokky.gherkin.lexer.Lexer;
 
 public class FeaturePrettyFormatter implements FeatureHandler {
     private final static int    DEFAULT_BUFFER_SIZE = 350 * 1024;
@@ -229,19 +230,19 @@ public class FeaturePrettyFormatter implements FeatureHandler {
     }
 
     private static class Table {
-        int columns = 0;
-        int[] sizes;
+        String[] header;
+        int[]    sizes;
         List rows = new LinkedList<>();
 
         Table(String[] header) {
-            columns = header.length;
-            sizes = new int[columns];
+            this.header = header;
+            sizes = new int[header.length];
             add(header);
         }
 
         void add(String[] row) {
-            if (row.length != columns) {
-                throw new RuntimeException("row.length != columns");
+            if (row.length != header.length) {
+                throw new RuntimeException("row.length != header.length. Details: header: " + Arrays.toString(header) + " row: " + Arrays.toString(row));
             }
             rows.add(row);
             for (int i = 0; i < sizes.length; i++) {

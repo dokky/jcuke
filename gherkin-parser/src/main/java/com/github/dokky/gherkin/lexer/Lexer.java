@@ -1,12 +1,12 @@
 package com.github.dokky.gherkin.lexer;
 
-import lombok.Data;
-
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
+
+import lombok.Data;
 
 @Data
 public final class Lexer {
@@ -17,6 +17,7 @@ public final class Lexer {
     private   int          currentPosition;
     private   int          currentTokenStartPosition;
     private   int          previousTokenStartPosition;
+    private int currentLineNumber = 1;
 
     private TokenType currentTokenType;
     private TokenType previousTokenType;
@@ -53,6 +54,7 @@ public final class Lexer {
         previousTokenStartPosition = startOffset;
         currentPosition = startOffset;
         context = CONTEXT_ROOT;
+        currentLineNumber = 1;
         firstStepInScenarioFound = false;
         afterStepKeyword = false;
         afterScenarioKeyword = false;
@@ -86,6 +88,7 @@ public final class Lexer {
             currentTokenType = TokenType.WHITESPACE;
             while (currentPosition < endOffset && Character.isWhitespace(buffer.charAt(currentPosition))) {
                 if (buffer.charAt(currentPosition) == '\n') {
+                    currentLineNumber++;
                     // reset flags
                     afterFeatureKeyword = false;
                     afterScenarioKeyword = false;
@@ -124,18 +127,10 @@ public final class Lexer {
                 parsePyString();
                 return;
             } else if (firstStepInScenarioFound && c == '|') {
-                currentTokenType = TokenType.PIPE;
-                currentPosition++;
-                inTable = true;
+                parsePipe();
                 return;
             } else if (firstStepInScenarioFound && inTable) {
-                currentTokenType = TokenType.TABLE_CELL;
-                while (currentPosition < endOffset && buffer.charAt(currentPosition) != '|' && buffer.charAt(currentPosition) != '\n') {
-                    currentPosition++;
-                }
-                while (currentPosition > 0 && Character.isWhitespace(buffer.charAt(currentPosition - 1))) {
-                    currentPosition--;
-                }
+                parseTableCell();
                 return;
             } else if (!afterScenarioKeyword && !afterStepKeyword) {
 
@@ -169,6 +164,22 @@ public final class Lexer {
                 context = CONTEXT_FEATURE;
             }
         }
+
+        if (context == CONTEXT_EXAMPLES) {
+            if (c == '#') {
+                parseComment();
+                return;
+            } else if (c == '|') {
+                parsePipe();
+                return;
+            } else if (inTable) {
+                parseTableCell();
+                return;
+            } else {
+                context = CONTEXT_FEATURE;
+            }
+        }
+
 
         if (context == CONTEXT_FEATURE) {
             if (c == '@') {
@@ -206,30 +217,6 @@ public final class Lexer {
         }
 
 
-        if (context == CONTEXT_EXAMPLES) {
-            if (c == '#') {
-                parseComment();
-                return;
-            } else if (c == '|') {
-                currentTokenType = TokenType.PIPE;
-                currentPosition++;
-                inTable = true;
-                return;
-            } else if (inTable) {
-                currentTokenType = TokenType.TABLE_CELL;
-                while (currentPosition < endOffset && buffer.charAt(currentPosition) != '|' && buffer.charAt(currentPosition) != '\n') {
-                    currentPosition++;
-                }
-                while (currentPosition > 0 && Character.isWhitespace(buffer.charAt(currentPosition - 1))) {
-                    currentPosition--;
-                }
-                return;
-            } else {
-                context = CONTEXT_FEATURE;
-            }
-        }
-
-
         currentTokenType = TokenType.TEXT;
         if (afterFeatureKeyword) {
             parseToEol();
@@ -238,11 +225,32 @@ public final class Lexer {
         }
     }
 
+    private void parsePipe() {
+        currentTokenType = TokenType.PIPE;
+        currentPosition++;
+        inTable = true;
+    }
+
+    private void parseTableCell() {
+        currentTokenType = TokenType.TABLE_CELL;
+
+        while (currentPosition < endOffset && buffer.charAt(currentPosition) != '\n' && (buffer.charAt(currentPosition) != '|' || (buffer.charAt(currentPosition - 1) == '\\'))) {
+            currentPosition++;
+
+        }
+        while (currentPosition > 0 && Character.isWhitespace(buffer.charAt(currentPosition - 1))) {
+            currentPosition--;
+        }
+    }
+
     private void parsePyString() {
         currentTokenType = TokenType.PYSTRING;
         currentPosition += 3;
         while (currentPosition < endOffset && !isStringAtPosition(PYSTRING)) {
             currentPosition++;
+            if (buffer.charAt(currentPosition) == '\n') {
+                currentLineNumber++;
+            }
         }
         currentPosition += 3;
     }
