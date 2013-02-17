@@ -1,19 +1,16 @@
-package com.github.dokky.gherkin;
+package com.github.dokky.gherkin.parser;
+
+import com.github.dokky.gherkin.FileUtils;
+import lombok.Data;
+import org.junit.Assert;
+import org.junit.Test;
 
 import java.io.File;
 import java.util.Iterator;
 import java.util.Set;
 import java.util.TreeSet;
 
-import lombok.Data;
-
-import org.junit.Assert;
-import org.junit.Test;
-
-import com.github.dokky.gherkin.parser.FeaturePrettyFormatter;
-import com.github.dokky.gherkin.parser.Parser;
-
-public class FileUtilsTest {
+public class FeaturePrettyFormatterTest {
     @Test
     public void testFile() {
         formatAndAssert(new File("bdd/msdptest/aps/security.feature"));
@@ -40,7 +37,7 @@ public class FileUtilsTest {
         String original = FileUtils.readFile(file);
         parser.parse(original);
         String formatted = handler.getResult();
-//        System.err.println(formatted);
+        System.err.println(formatted);
 
         String expected = removeWhitespaces(original);
         String actual = removeWhitespaces(formatted);

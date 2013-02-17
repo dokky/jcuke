@@ -1,10 +1,10 @@
 package com.github.dokky.gherkin.parser;
 
+import com.github.dokky.gherkin.lexer.Lexer;
+
 import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
-
-import com.github.dokky.gherkin.lexer.Lexer;
 
 public class FeaturePrettyFormatter implements FeatureHandler {
     private final static int    DEFAULT_BUFFER_SIZE = 350 * 1024;
@@ -94,6 +94,7 @@ public class FeaturePrettyFormatter implements FeatureHandler {
     @Override
     public void onExamples(String name) {
         flushTable();
+        out.append(EOL);
         out.append(EOL);
         out.append(IDENT);
         out.append("Examples: ");
@@ -229,6 +230,7 @@ public class FeaturePrettyFormatter implements FeatureHandler {
         return column;
     }
 
+    @SuppressWarnings("unchecked")
     private static class Table {
         String[] header;
         int[]    sizes;
