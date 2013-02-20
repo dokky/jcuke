@@ -1,10 +1,10 @@
 package com.github.dokky.gherkin.parser;
 
-import com.github.dokky.gherkin.lexer.Lexer;
-
 import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
+
+import com.github.dokky.gherkin.lexer.Lexer;
 
 public class FeaturePrettyFormatter implements FeatureHandler {
     private final static int    DEFAULT_BUFFER_SIZE = 350 * 1024;
@@ -41,9 +41,12 @@ public class FeaturePrettyFormatter implements FeatureHandler {
         out.append(name);
         out.append(EOL);
         if (description != null) {
-            out.append(IDENT);
-            out.append(description);
-            out.append(EOL);
+            String[] lines = description.split("\n");
+            for (String line : lines) {
+                out.append(IDENT);
+                out.append(line);
+                out.append(EOL);
+            }
         }
         inFeature = true;
         tag = null;
