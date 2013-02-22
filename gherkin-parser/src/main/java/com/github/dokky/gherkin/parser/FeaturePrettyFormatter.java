@@ -180,9 +180,13 @@ public class FeaturePrettyFormatter implements FeatureHandler {
 
     @Override
     public void onText(String text) {
-        // todo bug here: some tags are passed as text
-        tag = null;
-        flushTable();
+        if (!text.startsWith("Using step definitions from:")) {
+            // todo bug here: some tags are passed as text
+            if(!text.isEmpty())
+            throw new RuntimeException(text);
+            tag = null;
+            flushTable();
+        }
         out.append(EOL);
         out.append(text);
     }

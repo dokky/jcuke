@@ -1,14 +1,16 @@
 package com.github.dokky.gherkin.parser;
 
-import com.github.dokky.gherkin.FileUtils;
-import lombok.Data;
-import org.junit.Assert;
-import org.junit.Test;
-
 import java.io.File;
 import java.util.Iterator;
 import java.util.Set;
 import java.util.TreeSet;
+
+import lombok.Data;
+
+import org.junit.Assert;
+import org.junit.Test;
+
+import com.github.dokky.gherkin.FileUtils;
 
 public class FeaturePrettyFormatterTest {
     @Test
@@ -20,24 +22,26 @@ public class FeaturePrettyFormatterTest {
     @Test
     public void testDir() {
         Set<File> files = new TreeSet<>(FileUtils.scanDirectory(new File("bdd")));
+        int i = 1;
         for (File file : files) {
+            System.err.println("["+(i++)+"/"+files.size()+"]:"+file);
+
             try {
                 formatAndAssert(file);
             } catch (Exception e) {
-                e.printStackTrace();
+                throw new RuntimeException("file: " + file + " Error: "+ e.getMessage());
             }
         }
     }
 
     private void formatAndAssert(File file) {
-        System.err.println(file);
         FeaturePrettyFormatter handler = new FeaturePrettyFormatter();
         Parser parser = new Parser(handler);
 
         String original = FileUtils.readFile(file);
         parser.parse(original);
         String formatted = handler.getResult();
-        System.err.println(formatted);
+//        System.err.println(formatted);
 
         String expected = removeWhitespaces(original);
         String actual = removeWhitespaces(formatted);

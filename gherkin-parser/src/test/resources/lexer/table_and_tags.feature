@@ -39,6 +39,6 @@ Feature: APS Security
 			| global	| pwd		| null		|
 		And I expect the content to contain '<message>'
 		
-		Examples:
+		Examples: name
 			| user_name	| unit_id	| parameters											| http_code		| message													| 
 			| global	| 2029		| subscriberId=test1&credentials=pwd1&disablePaa=true	| 201			| /softwareProviderUnit/2029/account/test1					| 

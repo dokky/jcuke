@@ -35,6 +35,7 @@ public final class Lexer {
     private boolean afterFeatureKeyword      = false;
     private boolean afterStepKeyword         = false;
     private boolean afterScenarioKeyword     = false;
+    private boolean afterExamplesKeyword     = false;
     private boolean inTable                  = false;
 
     public static final String PYSTRING = "\"\"\"";
@@ -58,6 +59,7 @@ public final class Lexer {
         firstStepInScenarioFound = false;
         afterStepKeyword = false;
         afterScenarioKeyword = false;
+        afterExamplesKeyword = false;
         inTable = false;
         afterFeatureKeyword = false;
     }
@@ -93,6 +95,7 @@ public final class Lexer {
                     afterFeatureKeyword = false;
                     afterScenarioKeyword = false;
                     afterStepKeyword = false;
+                    afterExamplesKeyword = false;
                     inTable = false;
                 }
                 currentPosition++;
@@ -157,6 +160,7 @@ public final class Lexer {
                             currentPosition = colonPosition;
                             currentTokenType = TokenType.EXAMPLES_KEYWORD;
                             context = CONTEXT_EXAMPLES;
+                            afterExamplesKeyword = true;
                             return;
                         }
                     }
@@ -175,7 +179,7 @@ public final class Lexer {
             } else if (inTable) {
                 parseTableCell();
                 return;
-            } else {
+            } else if(!afterExamplesKeyword) {
                 context = CONTEXT_FEATURE;
             }
         }
@@ -246,13 +250,26 @@ public final class Lexer {
     private void parsePyString() {
         currentTokenType = TokenType.PYSTRING;
         currentPosition += 3;
-        while (currentPosition < endOffset && !isStringAtPosition(PYSTRING)) {
+        while (currentPosition < endOffset) {
+            if(isStringAtPosition(PYSTRING)) {
+                currentPosition += 3;
+                int endPosition = currentPosition;
+                while (currentPosition < endOffset) {
+                    if (buffer.charAt(currentPosition) == '\n') {
+                        currentPosition = endPosition;
+                        return;
+                    } else if(!Character.isWhitespace(buffer.charAt(currentPosition + 1))){
+                        break;
+                    }
+                    currentPosition++;
+                }
+            }
             currentPosition++;
             if (buffer.charAt(currentPosition) == '\n') {
                 currentLineNumber++;
             }
         }
-        currentPosition += 3;
+
     }
 
     private void parseComment() {

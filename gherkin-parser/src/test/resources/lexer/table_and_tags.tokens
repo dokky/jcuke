@@ -135,6 +135,7 @@ PIPE=|
 STEP_KEYWORD=And
 TEXT=I expect the content to contain '<message>'
 EXAMPLES_KEYWORD=Examples:
+TEXT=name
 PIPE=|
 TABLE_CELL=user_name
 PIPE=|

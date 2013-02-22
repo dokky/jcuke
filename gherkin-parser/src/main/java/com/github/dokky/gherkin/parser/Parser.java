@@ -95,7 +95,7 @@ public class Parser {
             }
             handler.end();
         } catch (Exception e) {
-            throw new RuntimeException("Error during parsing: " + e.getMessage() + " line: " + lexer.getCurrentLineNumber(), e);
+            throw new RuntimeException("Error during parsing at line " + lexer.getCurrentLineNumber() + ": " + e.getMessage() , e);
         }
     }
 
