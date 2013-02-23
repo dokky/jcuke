@@ -152,10 +152,17 @@ public class FeaturePrettyFormatter implements FeatureHandler {
             pyString = pyString.substring(0, pyString.length() - 3).trim();
         }
         out.append(IDENT);
+        out.append(IDENT);
         out.append(Lexer.PYSTRING);
         out.append(EOL);
-        out.append(pyString);
-        out.append(EOL);
+        String[] lines = pyString.split("\n");
+        for (String line : lines) {
+            out.append(IDENT);
+            out.append(IDENT);
+            out.append(line);
+            out.append(EOL);
+        }
+        out.append(IDENT);
         out.append(IDENT);
         out.append(Lexer.PYSTRING);
     }
@@ -205,7 +212,7 @@ public class FeaturePrettyFormatter implements FeatureHandler {
         if (table != null) {
             for (Object rowOrComment : table.rows) {
                 if (rowOrComment instanceof String) {
-                    out.append(rowOrComment);
+                    out.append(' ').append(((String) rowOrComment).trim());
                 } else if (rowOrComment instanceof String[]) {
                     String[] cells = (String[]) rowOrComment;
                     out.append(EOL);
