@@ -32,7 +32,7 @@ public class FeaturePrettyFormatterTest {
                 String reformatted = reformat(file);
 //                System.err.println(reformatted);
 //                Thread.sleep(5000);
-            } catch (Exception e) {
+            } catch (Exception|AssertionError e) {
                 throw new RuntimeException("file: " + file + " Error: "+ e.getMessage(), e);
             }
         }

@@ -91,7 +91,7 @@ public class Parser {
                                 handler.onTableRow(row.toArray(new String[row.size()]));
                                 row.clear();
                             }
-//                            handler.onWhitespaces(value);
+                            handler.onWhitespaces(value);
                         }
                         lexer.parseNextToken();
                         currentToken = lexer.getCurrentTokenType();

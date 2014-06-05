@@ -100,5 +100,28 @@ public class ParserTest {
 
 
     }
+    @org.junit.Test
+    public void testTablesWithEscapedValues() throws Exception {
+        testParse(
+                "Feature: XYZ\nBackground:\nGiven table:\n| a | b |\n| a1 |a\\#b |",
+
+                "Feature: XYZ\n" +
+                "\n" +
+                "    Background: \n" +
+                "        Given table:\n" +
+                "            | a    | b    |\n" +
+                "            | a1   | a\\#b |\n");
+        testParse(
+                "Feature: XYZ\nBackground:\nGiven table:\n| a | b |\n| a1 |a\\|b |",
+
+                "Feature: XYZ\n" +
+                "\n" +
+                "    Background: \n" +
+                "        Given table:\n" +
+                "            | a    | b    |\n" +
+                "            | a1   | a\\|b |\n");
+
+
+    }
 
 }
