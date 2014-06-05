@@ -11,7 +11,7 @@ public class LexerTest {
 
 
     private static void doTest(String text, String expectedTokens) {
-        doTest(text, expectedTokens.split(";"));
+        doTest(text, expectedTokens,";");
     }
 
     private static void doTest2(String text, String expectedTokens) {
@@ -19,7 +19,8 @@ public class LexerTest {
     }
 
 
-    private static void doTest(String text, String[] expectedTokens) {
+    private static void doTest(String text, String expectedTokensAndValues, String delimiter) {
+        String[] expectedTokens = expectedTokensAndValues.split(delimiter);
         Lexer lexer = new Lexer(text);
         lexer.parseNextToken();
         int idx = 0;
@@ -42,6 +43,21 @@ public class LexerTest {
         if (idx < expectedTokens.length) {
             Assert.fail("Not enough tokens");
         }
+    }
+
+    private static void doTestWithFullComparison(String text, String expectedTokensAndValues) {
+        Lexer lexer = new Lexer(text);
+        lexer.parseNextToken();
+        StringBuilder actualTokensAndValues = new StringBuilder();
+        while (lexer.getCurrentTokenType() != null) {
+                String tokenName = lexer.getCurrentTokenType().toString();
+                String tokenText = lexer.getCurrentTokenValue();
+                actualTokensAndValues.append(tokenName).append('=').append(tokenText).append(';');
+
+
+                lexer.parseNextToken();
+        }
+        Assert.assertEquals("Token and values do not match", expectedTokensAndValues, actualTokensAndValues.toString());
     }
 
     private static void doTest2(String text, String[] expectedTokens) {
@@ -90,16 +106,16 @@ public class LexerTest {
 
     @org.junit.Test
     public void testText() throws Exception {
-        doTest("text", new String[]{"TEXT", "text",});
+        doTest("text", "TEXT;text");
 
     }
 
     @org.junit.Test
     public void testComment1() throws Exception {
-        doTest("#", new String[]{"COMMENT", "#",});
-        doTest("#comment", new String[]{"COMMENT", "#comment",});
-        doTest("#comment#comment", new String[]{"COMMENT", "#comment#comment",});
-        doTest("#comment #comment", new String[]{"COMMENT", "#comment #comment",});
+        doTest("#", "COMMENT;#");
+        doTest("#comment", "COMMENT;#comment");
+        doTest("#comment#comment", "COMMENT;#comment#comment");
+        doTest("#comment #comment", "COMMENT;#comment #comment");
         doTest("Feature: XYZ\nBackground:\nGiven table:\n|a| #comment",
                "FEATURE_KEYWORD;Feature:;TEXT;XYZ;BACKGROUND_KEYWORD;Background:;STEP_KEYWORD;Given;TEXT;table:;PIPE;|;TABLE_CELL;a;PIPE;|;COMMENT;#comment");
         doTest("Feature: XYZ\nBackground:\nGiven table:\n|a| #comment\n|a|\n",
@@ -114,24 +130,55 @@ public class LexerTest {
     public void testTable() throws Exception {
         doTest("Feature: XYZ\nBackground:\nGiven table:\n|a|\n|a|",
                "FEATURE_KEYWORD;Feature:;TEXT;XYZ;BACKGROUND_KEYWORD;Background:;STEP_KEYWORD;Given;TEXT;table:;PIPE;|;TABLE_CELL;a;PIPE;|;PIPE;|;TABLE_CELL;a;PIPE;|");
+        doTest("Feature: XYZ\nBackground:\nGiven table:\n|a|b|\n|a1|b1|",
+               "FEATURE_KEYWORD;Feature:;TEXT;XYZ;BACKGROUND_KEYWORD;Background:;STEP_KEYWORD;Given;TEXT;table:;PIPE;|;TABLE_CELL;a;PIPE;|;TABLE_CELL;b;PIPE;|;PIPE;|;TABLE_CELL;a1;PIPE;|;TABLE_CELL;b1;PIPE;|");
+        doTestWithFullComparison(
+                "Feature: XYZ\nBackground:\nGiven table:\n| a | b |\n| a1 | |",
+               "FEATURE_KEYWORD=Feature:;WHITESPACE= ;TEXT=XYZ;WHITESPACE=\n" +
+               ";BACKGROUND_KEYWORD=Background:;WHITESPACE=\n" +
+               ";STEP_KEYWORD=Given;WHITESPACE= ;TEXT=table:;WHITESPACE=\n" +
+               ";PIPE=|;WHITESPACE= ;TABLE_CELL=a;WHITESPACE= ;PIPE=|;WHITESPACE= ;TABLE_CELL=b;WHITESPACE= ;PIPE=|;WHITESPACE=\n" +
+               ";PIPE=|;WHITESPACE= ;TABLE_CELL=a1;WHITESPACE= ;PIPE=|;WHITESPACE= ;PIPE=|;");
+        doTestWithFullComparison(
+                "Feature: XYZ\nBackground:\nGiven table:\n| | b |\n| a1 | |",
+               "FEATURE_KEYWORD=Feature:;WHITESPACE= ;TEXT=XYZ;WHITESPACE=\n" +
+               ";BACKGROUND_KEYWORD=Background:;WHITESPACE=\n" +
+               ";STEP_KEYWORD=Given;WHITESPACE= ;TEXT=table:;WHITESPACE=\n" +
+               ";PIPE=|;WHITESPACE= ;PIPE=|;WHITESPACE= ;TABLE_CELL=b;WHITESPACE= ;PIPE=|;WHITESPACE=\n" +
+               ";PIPE=|;WHITESPACE= ;TABLE_CELL=a1;WHITESPACE= ;PIPE=|;WHITESPACE= ;PIPE=|;");
+        doTestWithFullComparison(
+                "Feature: XYZ\nBackground:\nGiven table:\n| a | b |\n| a1 ||",
+                "FEATURE_KEYWORD=Feature:;WHITESPACE= ;TEXT=XYZ;WHITESPACE=\n" +
+                ";BACKGROUND_KEYWORD=Background:;WHITESPACE=\n" +
+                ";STEP_KEYWORD=Given;WHITESPACE= ;TEXT=table:;WHITESPACE=\n" +
+                ";PIPE=|;WHITESPACE= ;TABLE_CELL=a;WHITESPACE= ;PIPE=|;WHITESPACE= ;TABLE_CELL=b;WHITESPACE= ;PIPE=|;WHITESPACE=\n" +
+                ";PIPE=|;WHITESPACE= ;TABLE_CELL=a1;WHITESPACE= ;PIPE=|;PIPE=|;");
+        doTestWithFullComparison(
+                "Feature: XYZ\nBackground:\nGiven table:\n| a | b |\n|| a1 |",
+                "FEATURE_KEYWORD=Feature:;WHITESPACE= ;TEXT=XYZ;WHITESPACE=\n" +
+                ";BACKGROUND_KEYWORD=Background:;WHITESPACE=\n" +
+                ";STEP_KEYWORD=Given;WHITESPACE= ;TEXT=table:;WHITESPACE=\n" +
+                ";PIPE=|;WHITESPACE= ;TABLE_CELL=a;WHITESPACE= ;PIPE=|;WHITESPACE= ;TABLE_CELL=b;WHITESPACE= ;PIPE=|;WHITESPACE=\n" +
+                ";PIPE=|;PIPE=|;WHITESPACE= ;TABLE_CELL=a1;WHITESPACE= ;PIPE=|;");
+
     }
 
     @org.junit.Test
     public void testTag() throws Exception {
-        doTest("@tag", new String[]{"TAG", "@tag",});
-        doTest("@tag1@tag2", new String[]{"TAG", "@tag1", "TAG", "@tag2",});
-        doTest("@tag1 @tag2", new String[]{"TAG", "@tag1", "TAG", "@tag2",});
+        doTest("@tag", "TAG;@tag");
+        doTest("@tag1@tag2", "TAG;@tag1;TAG;@tag2");
+        doTest("@tag1 @tag2", "TAG;@tag1;TAG;@tag2");
     }
 
     @org.junit.Test
     public void testFeature() throws Exception {
-        doTest("Feature", new String[]{"TEXT", "Feature",});
-        doTest("Feature:", new String[]{"FEATURE_KEYWORD", "Feature:",});
-        doTest("Feature :", new String[]{"FEATURE_KEYWORD", "Feature :",});
-        doTest("Feature: Title", new String[]{"FEATURE_KEYWORD", "Feature:", "TEXT", "Title",});
-        doTest("Feature: Title\nDescription", new String[]{"FEATURE_KEYWORD", "Feature:", "TEXT", "Title", "TEXT", "Description",});
-        doTest("Feature: Title\nDescription When", new String[]{"FEATURE_KEYWORD", "Feature:", "TEXT", "Title", "TEXT", "Description When",});
-        doTest("Feature: Title\nWhen Description", new String[]{"FEATURE_KEYWORD", "Feature:", "TEXT", "Title", "TEXT", "When Description",});
+        doTest("Feature", "TEXT;Feature");
+        doTest("Feature:", "FEATURE_KEYWORD;Feature:");
+        doTest("Feature :", "FEATURE_KEYWORD;Feature :");
+        doTest("Feature: Title", "FEATURE_KEYWORD;Feature:;TEXT;Title");
+        doTest("Feature: Title\nDescription", "FEATURE_KEYWORD;Feature:;TEXT;Title;TEXT;Description");
+        doTest("Feature: Title\nDescription When", "FEATURE_KEYWORD;Feature:;TEXT;Title;TEXT;Description When");
+        doTest("Feature: Title\nWhen Description", "FEATURE_KEYWORD;Feature:;TEXT;Title;TEXT;When Description");
     }
 
     @org.junit.Test

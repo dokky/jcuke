@@ -91,7 +91,7 @@ public final class Lexer {
             while (currentPosition < endOffset && Character.isWhitespace(buffer.charAt(currentPosition))) {
                 if (buffer.charAt(currentPosition) == '\n') {
                     currentLineNumber++;
-                    // reset flags
+                    // reset all flags after new line
                     afterFeatureKeyword = false;
                     afterScenarioKeyword = false;
                     afterStepKeyword = false;
