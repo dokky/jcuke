@@ -3,14 +3,11 @@ package com.github.dokky.gherkin.parser;
 import java.util.LinkedList;
 import java.util.List;
 
-import lombok.extern.slf4j.Slf4j;
-
 import com.github.dokky.gherkin.lexer.Lexer;
 import com.github.dokky.gherkin.lexer.TokenType;
 
 import static com.github.dokky.gherkin.lexer.TokenType.*;
 
-@Slf4j
 public class Parser {
     private FeatureHandler handler;
 
