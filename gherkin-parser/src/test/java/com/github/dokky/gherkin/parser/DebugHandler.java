@@ -12,43 +12,45 @@ public class DebugHandler implements FeatureHandler {
         return result.toString();
     }
 
-    private String decorate(String description) {return "[" + description + "]";}
+    private String decorate(String description) {
+        return description != null ? "[" + description + "]": "";
+    }
 
     @Override
     public void onFeature(String name, String description) {
         out.print(decorate("Feature:"));
-        out.println(decorate(name));
-        out.println(decorate(description));
+        out.print(decorate(name));
+        out.print(decorate(description));
     }
 
     @Override
     public void onBackground(String name) {
         out.print(decorate("Background:"));
-        out.println(decorate(name));
+        out.print(decorate(name));
     }
 
     @Override
     public void onScenario(String name) {
         out.print(decorate("Scenario:"));
-        out.println(decorate(name));
+        out.print(decorate(name));
     }
 
     @Override
     public void onScenarioOutline(String name) {
         out.print(decorate("Scenario Outline:"));
-        out.println(decorate(name));
+        out.print(decorate(name));
     }
 
     @Override
     public void onExamples(String name) {
         out.print(decorate("Examples:"));
-        out.println(decorate(name));
+        out.print(decorate(name));
     }
 
     @Override
     public void onStep(String stepType, String name) {
         out.print(decorate(stepType));
-        out.println(decorate(name));
+        out.print(decorate(name));
     }
 
     @Override
@@ -57,7 +59,7 @@ public class DebugHandler implements FeatureHandler {
             out.print(decorate("|"));
             out.print(decorate(cell));
         }
-        out.println(decorate("|"));
+        out.print(decorate("|"));
     }
 
     @Override
@@ -69,7 +71,7 @@ public class DebugHandler implements FeatureHandler {
     public void onPyString(String pyString) {
         out.print(decorate("\"\"\""));
         out.print(decorate(pyString));
-        out.println(decorate("\"\"\""));
+        out.print(decorate("\"\"\""));
     }
 
     @Override
@@ -84,7 +86,10 @@ public class DebugHandler implements FeatureHandler {
 
     @Override
     public void onWhitespaces(String whitespaces) {
-        out.print(decorate(whitespaces));
+        out.print(decorate(whitespaces.replace(' ', '_').replaceAll("\t", "\\\\t").replaceAll("\n", "\\\\n")));
+        if (whitespaces.contains("\n")) {
+            out.println();
+        }
     }
 
     @Override
@@ -94,6 +99,6 @@ public class DebugHandler implements FeatureHandler {
 
     @Override
     public void end() {
-
+       out.flush();
     }
 }

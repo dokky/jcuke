@@ -15,6 +15,7 @@ public class Parser {
         this.handler = handler;
     }
 
+    @SuppressWarnings("ConstantConditions")
     public void parse(String text) {
         Lexer lexer = new Lexer(text);
         try {
@@ -50,7 +51,7 @@ public class Parser {
                 } else if (currentToken == STEP_KEYWORD) {
                     handler.onStep(lexer.getCurrentTokenValue(), getNextTextToken(lexer));
                 } else if (currentToken == TABLE_CELL) {
-                    List<String> row = new LinkedList<String>();
+                    List<String> row = new LinkedList<>();
                     while (currentToken != null &&
                            (currentToken == TABLE_CELL ||
                             currentToken == PIPE ||
@@ -60,6 +61,20 @@ public class Parser {
                         String value = lexer.getCurrentTokenValue();
                         if (currentToken == TABLE_CELL) {
                             row.add(value);
+                        } else if (currentToken == PIPE) {
+                            TokenType previousTokenType = lexer.getPreviousTokenType();
+                            if (previousTokenType == PIPE) { // case when table has empty cells like |abc||bdx|
+                                row.add(null);
+                            } else if (previousTokenType == WHITESPACE) { // case when table has empty cells like |abc|  |bdx|
+                                if (lexer.hasNewLine(lexer.getPreviousTokenStartPosition(), lexer.getCurrentTokenStartPosition())) {
+                                    lexer.parseNextToken();
+                                    currentToken = lexer.getCurrentTokenType();
+                                    continue;
+                                }
+                                else if(lexer.charAt(lexer.getPreviousTokenStartPosition() - 1) == '|') {  // hack
+                                    row.add(null);
+                                }
+                            }
                         } else if (currentToken == COMMENT) {
                             if (!row.isEmpty()) {
                                 handler.onTableRow(row.toArray(new String[row.size()]));
@@ -76,11 +91,16 @@ public class Parser {
                                 handler.onTableRow(row.toArray(new String[row.size()]));
                                 row.clear();
                             }
-                            handler.onWhitespaces(value);
+//                            handler.onWhitespaces(value);
                         }
                         lexer.parseNextToken();
                         currentToken = lexer.getCurrentTokenType();
-                    }
+                        if (currentToken == null && !row.isEmpty()) {
+                            handler.onTableRow(row.toArray(new String[row.size()]));
+                            row.clear();
+                        }
+                    } // while end
+
                     continue; // go to main loop
                 } else if (currentToken == FEATURE_KEYWORD) {
                     handler.onFeature(getNextTextToken(lexer), collectTextItemsUntilScenarioStarts(lexer));
@@ -90,9 +110,10 @@ public class Parser {
 
                 lexer.parseNextToken();
             }
+
             handler.end();
         } catch (Exception e) {
-            throw new RuntimeException("Error during parsing at line " + lexer.getCurrentLineNumber() + ": " + e.getMessage() , e);
+            throw new RuntimeException("Error during parsing at line " + lexer.getCurrentLineNumber() + ": " + e.getMessage(), e);
         }
     }
 
@@ -125,6 +146,7 @@ public class Parser {
             }
         }
         lexer.setCurrentPosition(lastPosition); // return position back to last text occurrence
-        return text.length() == 0 ? null : text.toString().trim();
+        String trimmed = text.toString().trim();
+        return trimmed.length() == 0 ? null : trimmed;
     }
 }

@@ -15,26 +15,30 @@ import com.github.dokky.gherkin.FileUtils;
 public class FeaturePrettyFormatterTest {
     @Test
     public void testFile() {
-        formatAndAssert(new File("bdd/msdptest/aps/security.feature"));
-
+//        String reformatted = reformat(new File("bdd/msdptest/aps/email_events.feature"));
+        String reformatted = reformat(new File("/home/stanislavd/workspace/msdp/bdd/src/msdptest/aps/refresh_subscriber_from_external_source.feature"));
+        System.err.println(reformatted);
     }
 
     @Test
     public void testDir() {
-        Set<File> files = new TreeSet<>(FileUtils.scanDirectory(new File("bdd")));
+        Set<File> files = new TreeSet<>(FileUtils.scanDirectory(new File("/home/stanislavd/workspace/msdp/bdd/src/msdptest")));
+//        Set<File> files = new TreeSet<>(FileUtils.scanDirectory(new File("bdd")));
         int i = 1;
         for (File file : files) {
             System.err.println("["+(i++)+"/"+files.size()+"]:"+file);
 
             try {
-                formatAndAssert(file);
+                String reformatted = reformat(file);
+//                System.err.println(reformatted);
+//                Thread.sleep(5000);
             } catch (Exception e) {
-                throw new RuntimeException("file: " + file + " Error: "+ e.getMessage());
+                throw new RuntimeException("file: " + file + " Error: "+ e.getMessage(), e);
             }
         }
     }
 
-    private void formatAndAssert(File file) {
+    private String reformat(File file) {
         FeaturePrettyFormatter handler = new FeaturePrettyFormatter();
         Parser parser = new Parser(handler);
 
@@ -46,6 +50,7 @@ public class FeaturePrettyFormatterTest {
         String expected = removeWhitespaces(original);
         String actual = removeWhitespaces(formatted);
         Assert.assertEquals("Formatted not equal original: " + diff(original, formatted), expected, actual);
+        return formatted;
     }
 
     private String removeWhitespaces(String original) {

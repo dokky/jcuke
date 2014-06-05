@@ -6,20 +6,28 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 
-import lombok.Data;
+import lombok.Getter;
+import lombok.Setter;
 
-@Data
+
 public final class Lexer {
 
     protected CharSequence buffer;
     protected int          startOffset;
     protected int          endOffset;
+    @Getter
+    @Setter
     private   int          currentPosition;
+    @Getter
     private   int          currentTokenStartPosition;
+    @Getter
     private   int          previousTokenStartPosition;
+    @Getter
     private int currentLineNumber = 1;
 
+    @Getter
     private TokenType currentTokenType;
+    @Getter
     private TokenType previousTokenType;
 
     private static final int CONTEXT_ROOT             = 0;
@@ -74,6 +82,10 @@ public final class Lexer {
         } else {
             return null;
         }
+    }
+
+    public char charAt(int index) {
+        return buffer.charAt(index);
     }
 
     public void parseNextToken() {

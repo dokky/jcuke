@@ -4,11 +4,15 @@ import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
 
+import org.apache.commons.lang.StringUtils;
+
 import com.github.dokky.gherkin.lexer.Lexer;
+import com.sun.istack.internal.Nullable;
 
 public class FeaturePrettyFormatter implements FeatureHandler {
     private final static int    DEFAULT_BUFFER_SIZE = 350 * 1024;
     private final static String IDENT               = "    ";
+    private final static String DOUBLE_IDENT        = IDENT + IDENT;
     private final        char   EOL                 = '\n';
 
     private StringBuilder out;
@@ -21,7 +25,7 @@ public class FeaturePrettyFormatter implements FeatureHandler {
     private String tag;
 
     public String getResult() {
-        return out.toString();
+        return StringUtils.stripStart(out.toString(), null);
     }
 
     @Override
@@ -70,6 +74,7 @@ public class FeaturePrettyFormatter implements FeatureHandler {
     public void onScenario(String name) {
         flushTable();
         out.append(EOL);
+        out.append(EOL);
         out.append(IDENT);
         out.append("Scenario: ");
         if (name != null) {
@@ -83,6 +88,7 @@ public class FeaturePrettyFormatter implements FeatureHandler {
     @Override
     public void onScenarioOutline(String name) {
         flushTable();
+        out.append(EOL);
         out.append(EOL);
         out.append(IDENT);
         out.append("Scenario Outline: ");
@@ -111,8 +117,7 @@ public class FeaturePrettyFormatter implements FeatureHandler {
     public void onStep(String stepType, String name) {
         flushTable();
         out.append(EOL);
-        out.append(IDENT);
-        out.append(IDENT);
+        out.append(DOUBLE_IDENT);
         out.append(stepType);
         out.append(' ');
         out.append(name);
@@ -121,9 +126,9 @@ public class FeaturePrettyFormatter implements FeatureHandler {
     @Override
     public void onTableRow(String[] cells) {
         if (table == null) {
-            table = new Table(cells);
+            table = new Table(cells); // header
         } else {
-            table.add(cells);
+            table.add(cells); // rows with cells
         }
     }
 
@@ -149,21 +154,36 @@ public class FeaturePrettyFormatter implements FeatureHandler {
             pyString = pyString.substring(3);
         }
         if (pyString.endsWith(Lexer.PYSTRING)) {
-            pyString = pyString.substring(0, pyString.length() - 3).trim();
+            pyString = pyString.substring(0, pyString.length() - 3);
         }
-        out.append(IDENT);
-        out.append(IDENT);
+        out.append(DOUBLE_IDENT);
         out.append(Lexer.PYSTRING);
         out.append(EOL);
-        String[] lines = pyString.split("\n");
+        String[] lines = pyString.replaceAll("\t", IDENT).split("\n");
+        int minNumberOfSpaces = Integer.MAX_VALUE;
         for (String line : lines) {
-            out.append(IDENT);
-            out.append(IDENT);
-            out.append(line);
+            if (line.trim().length() == 0) {
+                continue;
+            }
+            int spaceCount = 0;
+            while (spaceCount < line.length()) {
+                if (line.charAt(spaceCount) == ' ') {
+                    spaceCount++;
+                } else {
+                    break;
+                }
+            }
+            minNumberOfSpaces = Math.min(minNumberOfSpaces, spaceCount);
+        }
+        for (String line : lines) {
+            if (line.trim().length() == 0) {
+                continue;
+            }
+            out.append(DOUBLE_IDENT);
+            out.append(line.substring(minNumberOfSpaces));
             out.append(EOL);
         }
-        out.append(IDENT);
-        out.append(IDENT);
+        out.append(DOUBLE_IDENT);
         out.append(Lexer.PYSTRING);
     }
 
@@ -189,8 +209,9 @@ public class FeaturePrettyFormatter implements FeatureHandler {
     public void onText(String text) {
         if (!text.startsWith("Using step definitions from:")) {
             // todo bug here: some tags are passed as text
-            if(!text.isEmpty())
-            throw new RuntimeException(text);
+            if (!text.isEmpty()) {
+                throw new RuntimeException(text);
+            }
             tag = null;
             flushTable();
         }
@@ -216,8 +237,7 @@ public class FeaturePrettyFormatter implements FeatureHandler {
                 } else if (rowOrComment instanceof String[]) {
                     String[] cells = (String[]) rowOrComment;
                     out.append(EOL);
-                    out.append(IDENT);
-                    out.append(IDENT);
+                    out.append(DOUBLE_IDENT);
                     if (!inExamples) {
                         out.append(IDENT);
                     }
@@ -231,7 +251,8 @@ public class FeaturePrettyFormatter implements FeatureHandler {
         }
     }
 
-    private static StringBuilder column(String cell, int size) {
+    private static StringBuilder column(@Nullable String cellValue, int size) {
+        String cell = cellValue == null ? "" : cellValue;
         StringBuilder column = new StringBuilder(size + 3);
         column.append('|');
         column.append(' ');
@@ -251,7 +272,13 @@ public class FeaturePrettyFormatter implements FeatureHandler {
         List rows = new LinkedList<>();
 
         Table(String[] header) {
+            for (int i = 0; i < header.length; i++) {
+                if (header[i] == null || header[i].trim().isEmpty()) {
+                    throw new RuntimeException("Empty header at position: " + (i + 1));
+                }
+            }
             this.header = header;
+
             sizes = new int[header.length];
             add(header);
         }
@@ -263,6 +290,9 @@ public class FeaturePrettyFormatter implements FeatureHandler {
             rows.add(row);
             for (int i = 0; i < sizes.length; i++) {
                 sizes[i] = Math.max(sizes[i], row[i] == null ? 0 : row[i].length());
+                while (sizes[i] % 4 != 0) {
+                    sizes[i]++;
+                }
             }
         }
 
