@@ -2,21 +2,32 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0"
          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+
     <parent>
         <artifactId>jcuke</artifactId>
         <groupId>com.github.dokky</groupId>
         <version>${iteration}</version>
     </parent>
+
     <modelVersion>4.0.0</modelVersion>
 
-    <artifactId>gherkin-parser</artifactId>
+    <artifactId>gherkin-tools</artifactId>
+
 
     <dependencies>
         <dependency>
             <groupId>com.github.dokky</groupId>
-            <artifactId>gherkin-model</artifactId>
+            <artifactId>gherkin-parser</artifactId>
             <version>${iteration}</version>
         </dependency>
+
+        <dependency>
+            <groupId>com.beust</groupId>
+            <artifactId>jcommander</artifactId>
+            <version>1.30</version>
+        </dependency>
+
     </dependencies>
+
 
 </project>

@@ -1,20 +1,41 @@
 package com.github.dokky.gherkin.parser;
 
 import org.junit.Assert;
+import org.junit.Test;
 
-public class ParserTest {
+import com.github.dokky.gherkin.parser.handler.GherkinFilePrettyFormatter;
+
+public class GherkinParserTest {
 
     public void testParse(String feature, String expected) throws Exception {
 //        DebugHandler handler = new DebugHandler();
-        FeaturePrettyFormatter handler = new FeaturePrettyFormatter();
-        Parser p = new Parser(handler);
+        GherkinFilePrettyFormatter handler = new GherkinFilePrettyFormatter();
+        GherkinParser p = new GherkinParser(handler);
         p.parse(feature);
         String result = handler.getResult();
         System.out.println(result);
         Assert.assertEquals("Parser modified", expected, result);
     }
 
-    @org.junit.Test
+    public void testException(String feature, Class<? extends Exception> exceptionClass, String message) {
+        Throwable t = null;
+        try {
+            GherkinFilePrettyFormatter handler = new GherkinFilePrettyFormatter();
+            GherkinParser p = new GherkinParser(handler);
+            p.parse(feature);
+            String result = handler.getResult();
+            System.out.println(result);
+        } catch (Throwable throwable) {
+            t = throwable;
+        }
+        System.out.println(t);
+        Assert.assertEquals(exceptionClass, t != null ? t.getClass() : null);
+        Assert.assertEquals(message, t != null? t.getMessage(): null);
+
+
+    }
+
+    @Test
     public void testSimpleTablesNoSpaces() throws Exception {
         testParse("Feature: XYZ\nBackground:\nGiven table:\n|name|\n|value|\n",
                   "Feature: XYZ\n" +
@@ -40,7 +61,7 @@ public class ParserTest {
                   "            | a1   | b1   |\n");
 
     }
-    @org.junit.Test
+    @Test
     public void testSimpleTablesWithSpaces() throws Exception {
         testParse("Feature: XYZ\nBackground:\nGiven table:\n| name |\n| value |\n",
                   "Feature: XYZ\n" +
@@ -67,7 +88,7 @@ public class ParserTest {
 
     }
 
-    @org.junit.Test
+    @Test
     public void testTablesWithEmptyValues() throws Exception {
         testParse(
                 "Feature: XYZ\nBackground:\nGiven table:\n| a | b |\n| a1 | |",
@@ -100,7 +121,8 @@ public class ParserTest {
 
 
     }
-    @org.junit.Test
+
+    @Test
     public void testTablesWithEscapedValues() throws Exception {
         testParse(
                 "Feature: XYZ\nBackground:\nGiven table:\n| a | b |\n| a1 |a\\#b |",
@@ -122,6 +144,88 @@ public class ParserTest {
                 "            | a1   | a\\|b |\n");
 
 
+    }
+
+    @Test
+    public void testTablesWithWrongValues() throws Exception {
+        testException(
+                "Feature: XYZ\nBackground:\nGiven table:\n| a | b |\n| a1 |",
+                GherkinParseException.class,
+                "Parsing error at line 7: row.length != header.length. Details: header: [a, b] row: [a1]");
+        testException(
+                "Feature: XYZ\nBackground:\nGiven table:\n| a |  |\n| a1 |a |",
+                GherkinParseException.class,
+                "Parsing error at line 7: Empty header at position: 2");
+    }
+
+    @Test
+    public void testPyString() throws Exception {
+        testParse(
+                "Feature: XYZ\n" +
+                "Scenario:\n" +
+                "When testing pyString:\n" +
+                "\"\"\"\n" +
+                "pystring\n" +
+                "\"\"\"\n" +
+                "",
+
+                "Feature: XYZ\n" +
+                "\n" +
+                "\n" +
+                "    Scenario: \n" +
+                "        When testing pyString:\n" +
+                "        \"\"\"\n" +
+                "        pystring\n" +
+                "        \"\"\"\n");
+
+        testParse(
+                "Feature: XYZ\n" +
+                "Scenario:\n" +
+                "When testing pyString:\n" +
+                "\"\"\"\n" +
+                "pystring\n" +
+                "\"\"\"" +
+                "",
+
+                "Feature: XYZ\n" +
+                "\n" +
+                "\n" +
+                "    Scenario: \n" +
+                "        When testing pyString:\n" +
+                "        \"\"\"\n" +
+                "        pystring\n" +
+                "        \"\"\"\n");
+        testParse(
+                "Feature: XYZ\n" +
+                "Scenario:\n" +
+                "When testing pyString:\n" +
+                "\"\"\"\n" +
+                "pystring\n" +
+                "\"\"\"    ",
+
+                "Feature: XYZ\n" +
+                "\n" +
+                "\n" +
+                "    Scenario: \n" +
+                "        When testing pyString:\n" +
+                "        \"\"\"\n" +
+                "        pystring\n" +
+                "        \"\"\"\n");
+        testParse(
+                "Feature: XYZ\n" +
+                "Scenario:\n" +
+                "When testing pyString:\n" +
+                "\"\"\"\n" +
+                "pystring\n",
+
+                "Feature: XYZ\n" +
+                "\n" +
+                "\n" +
+                "    Scenario: \n" +
+                "        When testing pyString:\n" +
+                "        \"\"\"\n" +
+                "        pystring\n" +
+                "        \"\"\"\n");
     }
 
 }

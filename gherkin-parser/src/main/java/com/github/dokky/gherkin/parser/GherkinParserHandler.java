@@ -1,6 +1,6 @@
 package com.github.dokky.gherkin.parser;
 
-public interface FeatureHandler {
+public interface GherkinParserHandler {
     public void onFeature(String name, String description);
 
     public void onBackground(String name);

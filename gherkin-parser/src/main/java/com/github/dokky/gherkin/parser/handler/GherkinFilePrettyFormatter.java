@@ -1,4 +1,4 @@
-package com.github.dokky.gherkin.parser;
+package com.github.dokky.gherkin.parser.handler;
 
 import java.util.Arrays;
 import java.util.LinkedList;
@@ -6,10 +6,12 @@ import java.util.List;
 
 import org.apache.commons.lang.StringUtils;
 
-import com.github.dokky.gherkin.lexer.Lexer;
+import com.github.dokky.gherkin.lexer.GherkinLexer;
+import com.github.dokky.gherkin.parser.GherkinParseException;
+import com.github.dokky.gherkin.parser.GherkinParserHandler;
 import com.sun.istack.internal.Nullable;
 
-public class FeaturePrettyFormatter implements FeatureHandler {
+public class GherkinFilePrettyFormatter implements GherkinParserHandler {
     private final static int    DEFAULT_BUFFER_SIZE = 350 * 1024;
     private final static String IDENT               = "    ";
     private final static String DOUBLE_IDENT        = IDENT + IDENT;
@@ -150,14 +152,14 @@ public class FeaturePrettyFormatter implements FeatureHandler {
     @Override
     public void onPyString(String pyString) {
         out.append(EOL);
-        if (pyString.startsWith(Lexer.PYSTRING)) {
+        if (pyString.startsWith(GherkinLexer.PYSTRING)) {
             pyString = pyString.substring(3);
         }
-        if (pyString.endsWith(Lexer.PYSTRING)) {
+        if (pyString.endsWith(GherkinLexer.PYSTRING)) {
             pyString = pyString.substring(0, pyString.length() - 3);
         }
         out.append(DOUBLE_IDENT);
-        out.append(Lexer.PYSTRING);
+        out.append(GherkinLexer.PYSTRING);
         out.append(EOL);
         String[] lines = pyString.replaceAll("\t", IDENT).split("\n");
         int minNumberOfSpaces = Integer.MAX_VALUE;
@@ -184,7 +186,7 @@ public class FeaturePrettyFormatter implements FeatureHandler {
             out.append(EOL);
         }
         out.append(DOUBLE_IDENT);
-        out.append(Lexer.PYSTRING);
+        out.append(GherkinLexer.PYSTRING);
     }
 
     @Override
@@ -207,10 +209,10 @@ public class FeaturePrettyFormatter implements FeatureHandler {
 
     @Override
     public void onText(String text) {
-        if (!text.startsWith("Using step definitions from:")) {
+        if (!text.startsWith("Using step definitions from:")) {  // hack/support for freshen framework
             // todo bug here: some tags are passed as text
             if (!text.isEmpty()) {
-                throw new RuntimeException(text);
+                throw new GherkinParseException("Unexpected text token: " + text);
             }
             tag = null;
             flushTable();
@@ -274,7 +276,7 @@ public class FeaturePrettyFormatter implements FeatureHandler {
         Table(String[] header) {
             for (int i = 0; i < header.length; i++) {
                 if (header[i] == null || header[i].trim().isEmpty()) {
-                    throw new RuntimeException("Empty header at position: " + (i + 1));
+                    throw new GherkinParseException("Empty header at position: " + (i + 1));
                 }
             }
             this.header = header;
@@ -285,7 +287,7 @@ public class FeaturePrettyFormatter implements FeatureHandler {
 
         void add(String[] row) {
             if (row.length != header.length) {
-                throw new RuntimeException("row.length != header.length. Details: header: " + Arrays.toString(header) + " row: " + Arrays.toString(row));
+                throw new GherkinParseException("row.length != header.length. Details: header: " + Arrays.toString(header) + " row: " + Arrays.toString(row));
             }
             rows.add(row);
             for (int i = 0; i < sizes.length; i++) {

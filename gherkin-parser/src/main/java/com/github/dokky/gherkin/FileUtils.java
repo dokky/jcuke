@@ -8,9 +8,6 @@ import java.io.IOException;
 import java.util.LinkedList;
 import java.util.List;
 
-import lombok.extern.slf4j.Slf4j;
-
-@Slf4j
 public class FileUtils {
 
     private final static FileFilter DEFAULT_FILTER = new FileFilter() {
@@ -44,15 +41,19 @@ public class FileUtils {
 
 
     public static List<File> scanDirectory(File directory) {
+        return scanDirectory(directory, DEFAULT_FILTER);
+    }
+
+    public static List<File> scanDirectory(File directory, FileFilter filter) {
         List<File> files = new LinkedList<>();
-        scanDirectory(directory, files);
+        scanDirectoryInner(directory, files, filter);
         return files;
     }
 
-    public static void scanDirectory(File directory, List<File> files) {
-        for (File file : directory.listFiles(DEFAULT_FILTER)) {
+    private static void scanDirectoryInner(File directory, List<File> files, FileFilter filter) {
+        for (File file : directory.listFiles(filter)) {
             if (file.isDirectory()) {
-                scanDirectory(file, files);
+                scanDirectoryInner(file, files, filter);
             } else {
                 files.add(file);
             }

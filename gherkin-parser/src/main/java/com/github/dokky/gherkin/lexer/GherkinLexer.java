@@ -10,7 +10,7 @@ import lombok.Getter;
 import lombok.Setter;
 
 
-public final class Lexer {
+public final class GherkinLexer {
 
     protected CharSequence buffer;
     protected int          startOffset;
@@ -26,9 +26,9 @@ public final class Lexer {
     private int currentLineNumber = 1;
 
     @Getter
-    private TokenType currentTokenType;
+    private GherkinTokenType currentTokenType;
     @Getter
-    private TokenType previousTokenType;
+    private GherkinTokenType previousTokenType;
 
     private static final int CONTEXT_ROOT             = 0;
     private static final int CONTEXT_FEATURE          = 1;
@@ -48,11 +48,11 @@ public final class Lexer {
 
     public static final String PYSTRING = "\"\"\"";
 
-    private static final List<String> SCENARIO_KEYWORDS = sort(TokenType.SCENARIO_KEYWORDS.keySet());
-    private static final List<String> STEP_KEYWORDS     = sort(TokenType.STEP_KEYWORDS.keySet());
+    private static final List<String> SCENARIO_KEYWORDS = sort(GherkinTokenType.SCENARIO_KEYWORDS.keySet());
+    private static final List<String> STEP_KEYWORDS     = sort(GherkinTokenType.STEP_KEYWORDS.keySet());
 
 
-    public Lexer(CharSequence buffer) {
+    public GherkinLexer(CharSequence buffer) {
         init(buffer, 0, buffer.length());
     }
 
@@ -99,7 +99,7 @@ public final class Lexer {
         char c = buffer.charAt(currentPosition);
 
         if (Character.isWhitespace(c)) {
-            currentTokenType = TokenType.WHITESPACE;
+            currentTokenType = GherkinTokenType.WHITESPACE;
             while (currentPosition < endOffset && Character.isWhitespace(buffer.charAt(currentPosition))) {
                 if (buffer.charAt(currentPosition) == '\n') {
                     currentLineNumber++;
@@ -125,7 +125,7 @@ public final class Lexer {
                 int colonPosition = getColonPosition("Feature");
                 if (colonPosition != 0) {
                     currentPosition = colonPosition;
-                    currentTokenType = TokenType.FEATURE_KEYWORD;
+                    currentTokenType = GherkinTokenType.FEATURE_KEYWORD;
 
                     context = CONTEXT_FEATURE;
                     afterFeatureKeyword = true;
@@ -138,7 +138,7 @@ public final class Lexer {
             if (c == '#') {
                 parseComment();
                 return;
-            } else if (firstStepInScenarioFound && isStringAtPosition(PYSTRING)) {
+            } else if (firstStepInScenarioFound && isStringAtPosition(PYSTRING) && isValidPyString()) {
                 parsePyString();
                 return;
             } else if (firstStepInScenarioFound && c == '|') {
@@ -157,7 +157,7 @@ public final class Lexer {
 
                         if (endOffset - currentPosition > length && !Character.isLetterOrDigit(buffer.charAt(currentPosition + length))) {
                             currentPosition += length;
-                            currentTokenType = TokenType.KEYWORDS.get(keyword);
+                            currentTokenType = GherkinTokenType.KEYWORDS.get(keyword);
                             firstStepInScenarioFound = true;
                             afterStepKeyword = true;
                             return;
@@ -170,7 +170,7 @@ public final class Lexer {
                         int colonPosition = getColonPosition("Examples");
                         if (colonPosition != 0) {
                             currentPosition = colonPosition;
-                            currentTokenType = TokenType.EXAMPLES_KEYWORD;
+                            currentTokenType = GherkinTokenType.EXAMPLES_KEYWORD;
                             context = CONTEXT_EXAMPLES;
                             afterExamplesKeyword = true;
                             return;
@@ -191,7 +191,7 @@ public final class Lexer {
             } else if (inTable) {
                 parseTableCell();
                 return;
-            } else if(!afterExamplesKeyword) {
+            } else if (!afterExamplesKeyword) {
                 context = CONTEXT_FEATURE;
             }
         }
@@ -210,7 +210,7 @@ public final class Lexer {
                         int colonPosition = getColonPosition(scenarioKeyword);
                         if (colonPosition != 0) {
                             currentPosition = colonPosition;
-                            currentTokenType = TokenType.SCENARIO_KEYWORDS.get(scenarioKeyword);
+                            currentTokenType = GherkinTokenType.SCENARIO_KEYWORDS.get(scenarioKeyword);
 
                             firstStepInScenarioFound = false;
                             switch (scenarioKeyword) {
@@ -233,7 +233,7 @@ public final class Lexer {
         }
 
 
-        currentTokenType = TokenType.TEXT;
+        currentTokenType = GherkinTokenType.TEXT;
         if (afterFeatureKeyword) {
             parseToEol();
         } else {
@@ -242,13 +242,13 @@ public final class Lexer {
     }
 
     private void parsePipe() {
-        currentTokenType = TokenType.PIPE;
+        currentTokenType = GherkinTokenType.PIPE;
         currentPosition++;
         inTable = true;
     }
 
     private void parseTableCell() {
-        currentTokenType = TokenType.TABLE_CELL;
+        currentTokenType = GherkinTokenType.TABLE_CELL;
 
         while (currentPosition < endOffset && buffer.charAt(currentPosition) != '\n' && (buffer.charAt(currentPosition) != '|' || (buffer.charAt(currentPosition - 1) == '\\'))) {
             currentPosition++;
@@ -260,32 +260,54 @@ public final class Lexer {
     }
 
     private void parsePyString() {
-        currentTokenType = TokenType.PYSTRING;
-        currentPosition += 3;
+        currentTokenType = GherkinTokenType.PYSTRING;
+        currentPosition += 3; // first occurrence of '"""'
         while (currentPosition < endOffset) {
-            if(isStringAtPosition(PYSTRING)) {
-                currentPosition += 3;
-                int endPosition = currentPosition;
-                while (currentPosition < endOffset) {
-                    if (buffer.charAt(currentPosition) == '\n') {
-                        currentPosition = endPosition;
-                        return;
-                    } else if(!Character.isWhitespace(buffer.charAt(currentPosition + 1))){
-                        break;
-                    }
-                    currentPosition++;
-                }
-            }
-            currentPosition++;
             if (buffer.charAt(currentPosition) == '\n') {
                 currentLineNumber++;
             }
+            if (isStringAtPosition(PYSTRING)) { // last occurrence of '"""'
+                currentPosition += 3;
+                if (isValidPyString()) { // verify pyString is on the line itself
+                    return;
+                }
+            } else {
+                currentPosition++;
+            }
+
         }
 
     }
 
+    private boolean isValidPyString() {
+        return getCurrentLine(buffer, currentPosition, endOffset).trim().equals(PYSTRING);
+    }
+
+    public static String getCurrentLine(CharSequence buffer, int currentPosition, int endOffset) {
+        int lineStart = 0, lineEnd = 0;
+        int position = currentPosition;
+        while (position > 0) {
+            position--;
+            if (buffer.charAt(position) == '\n') {
+                position++;
+                break;
+            }
+        }
+        lineStart = position;
+        while (position++ < endOffset - 1) {
+
+            if (buffer.charAt(position) == '\n') {
+                position++;
+                break;
+            }
+        }
+        lineEnd = position;
+
+        return buffer.subSequence(lineStart, lineEnd).toString();
+    }
+
     private void parseComment() {
-        currentTokenType = TokenType.COMMENT;
+        currentTokenType = GherkinTokenType.COMMENT;
         currentPosition++;
         while (currentPosition < endOffset && buffer.charAt(currentPosition) != '\n') {
             currentPosition++;
@@ -293,7 +315,7 @@ public final class Lexer {
     }
 
     private void parseTag() {
-        currentTokenType = TokenType.TAG;
+        currentTokenType = GherkinTokenType.TAG;
         currentPosition++;
         while (currentPosition < endOffset && isValidTagChar(buffer.charAt(currentPosition))) {
             currentPosition++;
@@ -358,4 +380,6 @@ public final class Lexer {
         }
         return 0;
     }
+
+
 }

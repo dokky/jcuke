@@ -25,6 +25,7 @@
     <modules>
         <module>gherkin-model</module>
         <module>gherkin-parser</module>
+        <module>gherkin-tools</module>
     </modules>
 
     <dependencies>
@@ -36,7 +37,7 @@
         <dependency>
             <groupId>com.google.guava</groupId>
             <artifactId>guava</artifactId>
-            <version>14.0-rc1</version>
+            <version>14.0</version>
         </dependency>
         <dependency>
             <groupId>junit</groupId>
@@ -44,6 +45,19 @@
             <version>4.10</version>
             <scope>test</scope>
         </dependency>
+
+        <dependency>
+            <groupId>commons-lang</groupId>
+            <artifactId>commons-lang</artifactId>
+            <version>2.6</version>
+        </dependency>
+
+        <dependency>
+            <groupId>commons-io</groupId>
+            <artifactId>commons-io</artifactId>
+            <version>2.4</version>
+        </dependency>
+
     </dependencies>
 
 

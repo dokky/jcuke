@@ -3,25 +3,25 @@ package com.github.dokky.gherkin.parser;
 import java.util.LinkedList;
 import java.util.List;
 
-import com.github.dokky.gherkin.lexer.Lexer;
-import com.github.dokky.gherkin.lexer.TokenType;
+import com.github.dokky.gherkin.lexer.GherkinLexer;
+import com.github.dokky.gherkin.lexer.GherkinTokenType;
 
-import static com.github.dokky.gherkin.lexer.TokenType.*;
+import static com.github.dokky.gherkin.lexer.GherkinTokenType.*;
 
-public class Parser {
-    private FeatureHandler handler;
+public class GherkinParser {
+    private GherkinParserHandler handler;
 
-    public Parser(FeatureHandler handler) {
+    public GherkinParser(GherkinParserHandler handler) {
         this.handler = handler;
     }
 
     @SuppressWarnings("ConstantConditions")
     public void parse(String text) {
-        Lexer lexer = new Lexer(text);
+        GherkinLexer lexer = new GherkinLexer(text);
         try {
             handler.start();
             lexer.parseNextToken();
-            TokenType currentToken = lexer.getCurrentTokenType();
+            GherkinTokenType currentToken = lexer.getCurrentTokenType();
             while (currentToken != null) {
                 currentToken = lexer.getCurrentTokenType();
                 if (currentToken == WHITESPACE) {
@@ -29,7 +29,7 @@ public class Parser {
                 } else if (currentToken == TAG) {
                     handler.onTag(lexer.getCurrentTokenValue());
                 } else if (currentToken == COMMENT) {
-                    TokenType previousTokenType = lexer.getPreviousTokenType();
+                    GherkinTokenType previousTokenType = lexer.getPreviousTokenType();
                     boolean hasNewLineBefore = true;
                     if (previousTokenType != null) {
                         hasNewLineBefore = previousTokenType == WHITESPACE && lexer.hasNewLine(lexer.getPreviousTokenStartPosition(), lexer.getCurrentTokenStartPosition());
@@ -62,7 +62,7 @@ public class Parser {
                         if (currentToken == TABLE_CELL) {
                             row.add(value);
                         } else if (currentToken == PIPE) {
-                            TokenType previousTokenType = lexer.getPreviousTokenType();
+                            GherkinTokenType previousTokenType = lexer.getPreviousTokenType();
                             if (previousTokenType == PIPE) { // case when table has empty cells like |abc||bdx|
                                 row.add(null);
                             } else if (previousTokenType == WHITESPACE) { // case when table has empty cells like |abc|  |bdx|
@@ -70,8 +70,7 @@ public class Parser {
                                     lexer.parseNextToken();
                                     currentToken = lexer.getCurrentTokenType();
                                     continue;
-                                }
-                                else if(lexer.charAt(lexer.getPreviousTokenStartPosition() - 1) == '|') {  // hack
+                                } else if (lexer.charAt(lexer.getPreviousTokenStartPosition() - 1) == '|') {  // hack
                                     row.add(null);
                                 }
                             }
@@ -80,7 +79,7 @@ public class Parser {
                                 handler.onTableRow(row.toArray(new String[row.size()]));
                                 row.clear();
                             }
-                            TokenType previousTokenType = lexer.getPreviousTokenType();
+                            GherkinTokenType previousTokenType = lexer.getPreviousTokenType();
                             boolean hasNewLineBefore = true;
                             if (previousTokenType != null) {
                                 hasNewLineBefore = previousTokenType == WHITESPACE && lexer.hasNewLine(lexer.getPreviousTokenStartPosition(), lexer.getCurrentTokenStartPosition());
@@ -113,11 +112,11 @@ public class Parser {
 
             handler.end();
         } catch (Exception e) {
-            throw new RuntimeException("Error during parsing at line " + lexer.getCurrentLineNumber() + ": " + e.getMessage(), e);
+            throw new GherkinParseException(e.getMessage(), lexer.getCurrentLineNumber(), e);
         }
     }
 
-    private String getNextTextToken(Lexer lexer) {
+    private String getNextTextToken(GherkinLexer lexer) {
         int previousPosition = lexer.getCurrentPosition();
         lexer.parseNextToken();
         while (lexer.getCurrentTokenType() == COLON || lexer.getCurrentTokenType() == TEXT || lexer.getCurrentTokenType() == WHITESPACE || lexer.getCurrentTokenType() == COMMENT) {
@@ -133,7 +132,7 @@ public class Parser {
         return null;
     }
 
-    private String collectTextItemsUntilScenarioStarts(Lexer lexer) {
+    private String collectTextItemsUntilScenarioStarts(GherkinLexer lexer) {
         int lastPosition = lexer.getCurrentPosition();
         StringBuilder text = new StringBuilder();
         while (lexer.getCurrentTokenType() != null && !lexer.getCurrentTokenType().isScenarioKeyword()) {

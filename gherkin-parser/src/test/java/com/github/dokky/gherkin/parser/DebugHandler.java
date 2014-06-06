@@ -3,7 +3,7 @@ package com.github.dokky.gherkin.parser;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 
-public class DebugHandler implements FeatureHandler {
+public class DebugHandler implements GherkinParserHandler {
 
     private final StringWriter result = new StringWriter();
     private final PrintWriter  out    = new PrintWriter(result);

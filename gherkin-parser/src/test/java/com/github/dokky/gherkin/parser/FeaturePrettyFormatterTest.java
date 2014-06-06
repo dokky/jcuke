@@ -11,17 +11,19 @@ import org.junit.Assert;
 import org.junit.Test;
 
 import com.github.dokky.gherkin.FileUtils;
+import com.github.dokky.gherkin.parser.handler.GherkinFilePrettyFormatter;
 
 public class FeaturePrettyFormatterTest {
     @Test
     public void testFile() {
 //        String reformatted = reformat(new File("bdd/msdptest/aps/email_events.feature"));
-        String reformatted = reformat(new File("/home/stanislavd/workspace/msdp/bdd/src/msdptest/aps/refresh_subscriber_from_external_source.feature"));
+        String reformatted = reformat(new File("/home/stanislavd/workspace/msdp/bdd/src/msdptest/cm/product_revision_rest.feature"));
         System.err.println(reformatted);
     }
 
     @Test
     public void testDir() {
+//        Set<File> files = new TreeSet<>(FileUtils.scanDirectory(new File("/home/stanislavd/workspace/techweb/bdd")));
         Set<File> files = new TreeSet<>(FileUtils.scanDirectory(new File("/home/stanislavd/workspace/msdp/bdd/src/msdptest")));
 //        Set<File> files = new TreeSet<>(FileUtils.scanDirectory(new File("bdd")));
         int i = 1;
@@ -39,8 +41,8 @@ public class FeaturePrettyFormatterTest {
     }
 
     private String reformat(File file) {
-        FeaturePrettyFormatter handler = new FeaturePrettyFormatter();
-        Parser parser = new Parser(handler);
+        GherkinFilePrettyFormatter handler = new GherkinFilePrettyFormatter();
+        GherkinParser parser = new GherkinParser(handler);
 
         String original = FileUtils.readFile(file);
         parser.parse(original);

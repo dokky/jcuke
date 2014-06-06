@@ -1,13 +1,12 @@
-package com.github.dokky.gherkin.parser;
+package com.github.dokky.gherkin.parser.handler;
 
 import com.github.dokky.gherkin.model.*;
-import lombok.extern.slf4j.Slf4j;
+import com.github.dokky.gherkin.parser.GherkinParserHandler;
 
 import java.util.ArrayList;
 import java.util.List;
 
-@Slf4j
-public class ModelFeatureHandler implements FeatureHandler {
+public class GherkinModelParserHandler implements GherkinParserHandler {
     private FeatureFile featureFile = new FeatureFile();
     private List<Tag>   tags        = new ArrayList<Tag>();
 
@@ -136,7 +135,7 @@ public class ModelFeatureHandler implements FeatureHandler {
         if (text.startsWith("Using step definitions from:")) { // freshen dialect
 
         } else {
-            log.warn("undefined:" + text);
+            System.err.println("undefined:" + text);
         }
     }
 
