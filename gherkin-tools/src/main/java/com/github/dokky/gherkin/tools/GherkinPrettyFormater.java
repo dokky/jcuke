@@ -48,11 +48,12 @@ public class GherkinPrettyFormater {
             GherkinPrettyFormatterHandler handler = new GherkinPrettyFormatterHandler();
             GherkinParser parser = new GherkinParser(handler);
             parser.parse(original);
-            String parsed = handler.getResult();
+            String formatted = handler.getResult();
 
-            if (!removeWhitespaces(original).equals(removeWhitespaces(parsed))) {
+            if (!removeWhitespaces(original).equals(removeWhitespaces(formatted))) {
                 throw new ParseException("Parsed content differs from original", -1);
             }
+            FileUtils.write(file, formatted);
         } catch (Throwable e) {
             result.status = ValidationResult.STATUS_FAILED;
             result.errorMessages.add(e.getMessage());

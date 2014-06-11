@@ -2,7 +2,10 @@ package com.github.dokky.gherkin.tools;
 
 import com.beust.jcommander.JCommander;
 import com.beust.jcommander.Parameter;
+import com.github.dokky.gherkin.model.Feature;
 import com.github.dokky.gherkin.model.FeatureFile;
+import com.github.dokky.gherkin.model.Scenario;
+import com.github.dokky.gherkin.model.ScenarioOutline;
 import com.github.dokky.gherkin.parser.GherkinParser;
 import com.github.dokky.gherkin.parser.handler.GherkinModelParserHandler;
 import lombok.Data;
@@ -21,8 +24,11 @@ public class GherkinValidator {
         Collection<File> files = FileUtils.listFiles(directory, extensions, recursive);
         int i = 1;
         int errors = 0;
+        Statistics stats = new Statistics();
         for (File file : files) {
+
             ValidationResult validationResult = validate(file);
+            updateStatistics(validationResult.featureFile, stats);
 
             if(validationResult.status == ValidationResult.STATUS_FAILED) {
                 errors++;
@@ -36,6 +42,11 @@ public class GherkinValidator {
         } else {
             System.out.println("No errors found");
         }
+        System.out.println("Statistics:");
+        System.out.println("Features: " + stats.features);
+        System.out.println("Unique Scenarios: " + stats.uniqueScenarios);
+        System.out.println("Total Scenarios With Examples: " + stats.totalScenarios);
+        System.out.println("Total Steps With Examples: " + stats.steps);
 
     }
 
@@ -48,7 +59,8 @@ public class GherkinValidator {
             GherkinModelParserHandler handler = new GherkinModelParserHandler();
             GherkinParser parser = new GherkinParser(handler);
             parser.parse(original);
-            FeatureFile parsed = handler.getFeatureFile();
+            FeatureFile featureFile = handler.getFeatureFile();
+            result.featureFile = featureFile;
 
 
         } catch (Throwable e) {
@@ -60,6 +72,25 @@ public class GherkinValidator {
         return result;
     }
 
+    private void updateStatistics(FeatureFile featureFile, Statistics stats) {
+        Feature feature = featureFile.getFeature();
+
+        stats.features++;
+        stats.uniqueScenarios += feature.getScenarios().size();
+        stats.steps += feature.getBackground() != null ? feature.getBackground().getSteps().size() : 0;
+
+        for (Scenario scenario : feature.getScenarios()) {
+            if (scenario instanceof ScenarioOutline) {
+                ScenarioOutline scenarioOutline = (ScenarioOutline) scenario;
+                int examplesCount = scenarioOutline.getExamples().getTable().getRows().size();
+                stats.totalScenarios += examplesCount;
+                stats.steps += scenario.getSteps().size() + examplesCount;
+            } else {
+                stats.totalScenarios++;
+                stats.steps += scenario.getSteps().size();
+            }
+        }
+    }
 
     @Data
     private final static class ValidationResult {
@@ -69,6 +100,7 @@ public class GherkinValidator {
         final File file;
         String       status        = STATUS_OK;
         List<String> errorMessages = new LinkedList<>();
+        FeatureFile featureFile;
 
 
         @Override
@@ -83,6 +115,13 @@ public class GherkinValidator {
             }
             return sb.toString();
         }
+    }
+
+    private final static class Statistics {
+        int features;
+        int uniqueScenarios;
+        int totalScenarios;
+        int steps;
     }
 
     public static void main(String[] args) {
