@@ -45,6 +45,7 @@ public class FeaturePrettyFormatterTest {
 
         String original = FileUtils.readFile(file);
         parser.parse(original);
+
         String formatted = handler.getResult();
 //        System.err.println(formatted);
 

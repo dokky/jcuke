@@ -105,7 +105,7 @@ public class GherkinModelParserHandler implements GherkinParserHandler {
             getFeature().getBackground().getSteps().add(step);
         } else if (context == SCENARIO || context == SCENARIO_OUTLINE) {
             Step step = new Step(stepType, name);
-            getFeature().getBackground().getSteps().add(step);
+            getFeature().getLastScenario().getSteps().add(step);
         }
     }
 

@@ -17,12 +17,12 @@ import java.util.List;
 public class GherkinPrettyFormater {
 
 
-    public void validate(File directory, String[] extensions, boolean recursive) {
+    public void format(File directory, String[] extensions, boolean recursive) {
         Collection<File> files = FileUtils.listFiles(directory, extensions, recursive);
         int i = 1;
         int errors = 0;
         for (File file : files) {
-            ValidationResult validationResult = validate(file);
+            ValidationResult validationResult = format(file);
 
             if (validationResult.status == ValidationResult.STATUS_FAILED) {
                 errors++;
@@ -39,7 +39,7 @@ public class GherkinPrettyFormater {
 
     }
 
-    private ValidationResult validate(File file) {
+    private ValidationResult format(File file) {
         ValidationResult result = new ValidationResult(file);
 
         try {
@@ -111,6 +111,6 @@ public class GherkinPrettyFormater {
         JCommander jCommander = new JCommander(parameters, args);
 
         GherkinPrettyFormater validator = new GherkinPrettyFormater();
-        validator.validate(new File(parameters.dir), parameters.extensions, parameters.recursive);
+        validator.format(new File(parameters.dir), parameters.extensions, parameters.recursive);
     }
 }

@@ -13,9 +13,9 @@ public class Feature {
     private final @NonNull String name;
     private                String description;
 
-    private List<Tag> tags = new LinkedList<Tag>();
+    private List<Tag> tags = new LinkedList<>();
     private Background background;
-    private LinkedList<Scenario> scenarios = new LinkedList<Scenario>();
+    private LinkedList<Scenario> scenarios = new LinkedList<>();
 
     public Scenario getLastScenario() {
         return scenarios.getLast();
