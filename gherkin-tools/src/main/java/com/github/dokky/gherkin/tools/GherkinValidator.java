@@ -30,14 +30,14 @@ public class GherkinValidator {
             ValidationResult validationResult = validate(file);
             updateStatistics(validationResult.featureFile, stats);
 
-            if(validationResult.status == ValidationResult.STATUS_FAILED) {
+            if (validationResult.status == ValidationResult.STATUS_FAILED) {
                 errors++;
                 System.err.println("[" + (i++) + "/" + files.size() + "]:" + validationResult);
             } else {
                 System.out.println("[" + (i++) + "/" + files.size() + "]:" + validationResult);
             }
         }
-        if(errors > 0) {
+        if (errors > 0) {
             System.err.println("Errors: " + errors);
         } else {
             System.out.println("No errors found");
@@ -46,7 +46,8 @@ public class GherkinValidator {
         System.out.println("Features: " + stats.features);
         System.out.println("Unique Scenarios: " + stats.uniqueScenarios);
         System.out.println("Total Scenarios With Examples: " + stats.totalScenarios);
-        System.out.println("Total Steps With Examples: " + stats.steps);
+        System.out.println("Total Scenarios Steps With Examples: " + stats.steps);
+        System.out.println("Total Background Steps With Examples: " + stats.backgroundSteps);
 
     }
 
@@ -77,18 +78,24 @@ public class GherkinValidator {
 
         stats.features++;
         stats.uniqueScenarios += feature.getScenarios().size();
-        stats.steps += feature.getBackground() != null ? feature.getBackground().getSteps().size() : 0;
 
+        int totalScenariosInFeature = 0;
         for (Scenario scenario : feature.getScenarios()) {
             if (scenario instanceof ScenarioOutline) {
                 ScenarioOutline scenarioOutline = (ScenarioOutline) scenario;
                 int examplesCount = scenarioOutline.getExamples().getTable().getRows().size();
                 stats.totalScenarios += examplesCount;
+                totalScenariosInFeature += examplesCount;
                 stats.steps += scenario.getSteps().size() + examplesCount;
             } else {
                 stats.totalScenarios++;
+                totalScenariosInFeature++;
                 stats.steps += scenario.getSteps().size();
             }
+        }
+
+        if (feature.getBackground() != null) {
+            stats.backgroundSteps += feature.getBackground().getSteps().size() * totalScenariosInFeature;
         }
     }
 
@@ -98,7 +105,7 @@ public class GherkinValidator {
         public final static String STATUS_FAILED = "FAILED";
 
         final File file;
-        String       status        = STATUS_OK;
+        String status = STATUS_OK;
         List<String> errorMessages = new LinkedList<>();
         FeatureFile featureFile;
 
@@ -122,6 +129,7 @@ public class GherkinValidator {
         int uniqueScenarios;
         int totalScenarios;
         int steps;
+        int backgroundSteps;
     }
 
     public static void main(String[] args) {
