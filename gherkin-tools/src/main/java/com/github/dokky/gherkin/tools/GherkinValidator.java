@@ -2,6 +2,7 @@ package com.github.dokky.gherkin.tools;
 
 import com.beust.jcommander.JCommander;
 import com.beust.jcommander.Parameter;
+import com.beust.jcommander.converters.CommaParameterSplitter;
 import com.github.dokky.gherkin.model.Feature;
 import com.github.dokky.gherkin.model.FeatureFile;
 import com.github.dokky.gherkin.model.Scenario;
@@ -12,6 +13,7 @@ import lombok.Data;
 import org.apache.commons.io.FileUtils;
 
 import java.io.File;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.LinkedList;
 import java.util.List;
@@ -139,8 +141,8 @@ public class GherkinValidator {
             @Parameter(names = "-dir", required = true, echoInput = true)
             String dir;
 
-            @Parameter(names = "-extensions", required = false, echoInput = true, description = "Gherkin file extensions. Default: feature")
-            String[] extensions = {"feature"};
+            @Parameter(names = "-extensions", required = false, echoInput = true, description = "Gherkin file extensions. Default: feature", splitter = CommaParameterSplitter.class)
+            List<String> extensions = Arrays.asList("feature");
 
             @Parameter(names = "-recursive", required = false, echoInput = true, description = "Include subdirectories. Default: true")
             boolean recursive = true;
@@ -152,6 +154,6 @@ public class GherkinValidator {
         JCommander jCommander = new JCommander(parameters, args);
 
         GherkinValidator validator = new GherkinValidator();
-        validator.validate(new File(parameters.dir), parameters.extensions, parameters.recursive);
+        validator.validate(new File(parameters.dir), parameters.extensions.toArray(new String[parameters.extensions.size()]), parameters.recursive);
     }
 }
