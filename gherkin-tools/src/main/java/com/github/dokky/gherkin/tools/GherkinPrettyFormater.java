@@ -2,19 +2,19 @@ package com.github.dokky.gherkin.tools;
 
 import com.beust.jcommander.JCommander;
 import com.beust.jcommander.Parameter;
-import com.github.dokky.gherkin.model.FeatureFile;
 import com.github.dokky.gherkin.parser.GherkinParser;
-import com.github.dokky.gherkin.parser.handler.GherkinModelParserHandler;
+import com.github.dokky.gherkin.parser.handler.GherkinPrettyFormatterHandler;
 import lombok.Data;
 import org.apache.commons.io.FileUtils;
 
 import java.io.File;
+import java.text.ParseException;
 import java.util.Collection;
 import java.util.LinkedList;
 import java.util.List;
 
 
-public class GherkinValidator {
+public class GherkinPrettyFormater {
 
 
     public void validate(File directory, String[] extensions, boolean recursive) {
@@ -24,14 +24,14 @@ public class GherkinValidator {
         for (File file : files) {
             ValidationResult validationResult = validate(file);
 
-            if(validationResult.status == ValidationResult.STATUS_FAILED) {
+            if (validationResult.status == ValidationResult.STATUS_FAILED) {
                 errors++;
                 System.err.println("[" + (i++) + "/" + files.size() + "]:" + validationResult);
             } else {
                 System.out.println("[" + (i++) + "/" + files.size() + "]:" + validationResult);
             }
         }
-        if(errors > 0) {
+        if (errors > 0) {
             System.err.println("Errors: " + errors);
         } else {
             System.out.println("No errors found");
@@ -45,12 +45,14 @@ public class GherkinValidator {
         try {
             String original = FileUtils.readFileToString(file);
 
-            GherkinModelParserHandler handler = new GherkinModelParserHandler();
+            GherkinPrettyFormatterHandler handler = new GherkinPrettyFormatterHandler();
             GherkinParser parser = new GherkinParser(handler);
             parser.parse(original);
-            FeatureFile parsed = handler.getFeatureFile();
+            String parsed = handler.getResult();
 
-
+            if (!removeWhitespaces(original).equals(removeWhitespaces(parsed))) {
+                throw new ParseException("Parsed content differs from original", -1);
+            }
         } catch (Throwable e) {
             result.status = ValidationResult.STATUS_FAILED;
             result.errorMessages.add(e.getMessage());
@@ -60,6 +62,10 @@ public class GherkinValidator {
         return result;
     }
 
+    private String removeWhitespaces(String original) {
+        return original.replaceAll("\\s+", "");
+    }
+
 
     @Data
     private final static class ValidationResult {
@@ -67,7 +73,7 @@ public class GherkinValidator {
         public final static String STATUS_FAILED = "FAILED";
 
         final File file;
-        String       status        = STATUS_OK;
+        String status = STATUS_OK;
         List<String> errorMessages = new LinkedList<>();
 
 
@@ -104,7 +110,7 @@ public class GherkinValidator {
 
         JCommander jCommander = new JCommander(parameters, args);
 
-        GherkinValidator validator = new GherkinValidator();
+        GherkinPrettyFormater validator = new GherkinPrettyFormater();
         validator.validate(new File(parameters.dir), parameters.extensions, parameters.recursive);
     }
 }

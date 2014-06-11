@@ -1,10 +1,11 @@
 package com.github.dokky.gherkin.parser;
 
-import java.util.LinkedList;
-import java.util.List;
-
 import com.github.dokky.gherkin.lexer.GherkinLexer;
 import com.github.dokky.gherkin.lexer.GherkinTokenType;
+import com.github.dokky.gherkin.model.GherkinParseException;
+
+import java.util.LinkedList;
+import java.util.List;
 
 import static com.github.dokky.gherkin.lexer.GherkinTokenType.*;
 
@@ -53,10 +54,10 @@ public class GherkinParser {
                 } else if (currentToken == TABLE_CELL) {
                     List<String> row = new LinkedList<>();
                     while (currentToken != null &&
-                           (currentToken == TABLE_CELL ||
-                            currentToken == PIPE ||
-                            currentToken == WHITESPACE ||
-                            currentToken == COMMENT)) {
+                            (currentToken == TABLE_CELL ||
+                                    currentToken == PIPE ||
+                                    currentToken == WHITESPACE ||
+                                    currentToken == COMMENT)) {
 
                         String value = lexer.getCurrentTokenValue();
                         if (currentToken == TABLE_CELL) {

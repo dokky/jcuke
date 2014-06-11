@@ -1,4 +1,4 @@
-package com.github.dokky.gherkin.parser;
+package com.github.dokky.gherkin.model;
 
 import lombok.Getter;
 

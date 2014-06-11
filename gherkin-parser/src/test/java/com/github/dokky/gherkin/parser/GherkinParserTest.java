@@ -1,15 +1,15 @@
 package com.github.dokky.gherkin.parser;
 
+import com.github.dokky.gherkin.model.GherkinParseException;
+import com.github.dokky.gherkin.parser.handler.GherkinPrettyFormatterHandler;
 import org.junit.Assert;
 import org.junit.Test;
-
-import com.github.dokky.gherkin.parser.handler.GherkinFilePrettyFormatter;
 
 public class GherkinParserTest {
 
     public void testParse(String feature, String expected) throws Exception {
 //        DebugHandler handler = new DebugHandler();
-        GherkinFilePrettyFormatter handler = new GherkinFilePrettyFormatter();
+        GherkinPrettyFormatterHandler handler = new GherkinPrettyFormatterHandler();
         GherkinParser p = new GherkinParser(handler);
         p.parse(feature);
         String result = handler.getResult();
@@ -20,7 +20,7 @@ public class GherkinParserTest {
     public void testException(String feature, Class<? extends Exception> exceptionClass, String message) {
         Throwable t = null;
         try {
-            GherkinFilePrettyFormatter handler = new GherkinFilePrettyFormatter();
+            GherkinPrettyFormatterHandler handler = new GherkinPrettyFormatterHandler();
             GherkinParser p = new GherkinParser(handler);
             p.parse(feature);
             String result = handler.getResult();
@@ -30,7 +30,7 @@ public class GherkinParserTest {
         }
         System.out.println(t);
         Assert.assertEquals(exceptionClass, t != null ? t.getClass() : null);
-        Assert.assertEquals(message, t != null? t.getMessage(): null);
+        Assert.assertEquals(message, t != null ? t.getMessage() : null);
 
 
     }
@@ -38,53 +38,60 @@ public class GherkinParserTest {
     @Test
     public void testSimpleTablesNoSpaces() throws Exception {
         testParse("Feature: XYZ\nBackground:\nGiven table:\n|name|\n|value|\n",
-                  "Feature: XYZ\n" +
-                  "\n" +
-                  "    Background: \n" +
-                  "        Given table:\n" +
-                  "            | name     |\n" +
-                  "            | value    |\n");
+                "Feature: XYZ\n" +
+                        "\n" +
+                        "    Background: \n" +
+                        "        Given table:\n" +
+                        "            | name     |\n" +
+                        "            | value    |\n"
+        );
         testParse("Feature: XYZ\nBackground:\nGiven table:\n|name|\n|value|",
-                  "Feature: XYZ\n" +
-                  "\n" +
-                  "    Background: \n" +
-                  "        Given table:\n" +
-                  "            | name     |\n" +
-                  "            | value    |\n");
+                "Feature: XYZ\n" +
+                        "\n" +
+                        "    Background: \n" +
+                        "        Given table:\n" +
+                        "            | name     |\n" +
+                        "            | value    |\n"
+        );
 
         testParse("Feature: XYZ\nBackground:\nGiven table:\n|a|b|\n|a1|b1|",
-                  "Feature: XYZ\n" +
-                  "\n" +
-                  "    Background: \n" +
-                  "        Given table:\n" +
-                  "            | a    | b    |\n" +
-                  "            | a1   | b1   |\n");
+                "Feature: XYZ\n" +
+                        "\n" +
+                        "    Background: \n" +
+                        "        Given table:\n" +
+                        "            | a    | b    |\n" +
+                        "            | a1   | b1   |\n"
+        );
 
     }
+
     @Test
     public void testSimpleTablesWithSpaces() throws Exception {
         testParse("Feature: XYZ\nBackground:\nGiven table:\n| name |\n| value |\n",
-                  "Feature: XYZ\n" +
-                  "\n" +
-                  "    Background: \n" +
-                  "        Given table:\n" +
-                  "            | name     |\n" +
-                  "            | value    |\n");
+                "Feature: XYZ\n" +
+                        "\n" +
+                        "    Background: \n" +
+                        "        Given table:\n" +
+                        "            | name     |\n" +
+                        "            | value    |\n"
+        );
         testParse("Feature: XYZ\nBackground:\nGiven table:\n | name | \n | value | ",
-                  "Feature: XYZ\n" +
-                  "\n" +
-                  "    Background: \n" +
-                  "        Given table:\n" +
-                  "            | name     |\n" +
-                  "            | value    |\n");
+                "Feature: XYZ\n" +
+                        "\n" +
+                        "    Background: \n" +
+                        "        Given table:\n" +
+                        "            | name     |\n" +
+                        "            | value    |\n"
+        );
 
         testParse("Feature: XYZ\nBackground:\nGiven table:\n |  a  |  b  |  \n  |  a1  |  b1  |",
-                  "Feature: XYZ\n" +
-                  "\n" +
-                  "    Background: \n" +
-                  "        Given table:\n" +
-                  "            | a    | b    |\n" +
-                  "            | a1   | b1   |\n");
+                "Feature: XYZ\n" +
+                        "\n" +
+                        "    Background: \n" +
+                        "        Given table:\n" +
+                        "            | a    | b    |\n" +
+                        "            | a1   | b1   |\n"
+        );
 
     }
 
@@ -94,30 +101,33 @@ public class GherkinParserTest {
                 "Feature: XYZ\nBackground:\nGiven table:\n| a | b |\n| a1 | |",
 
                 "Feature: XYZ\n" +
-                "\n" +
-                "    Background: \n" +
-                "        Given table:\n" +
-                "            | a    | b    |\n" +
-                "            | a1   |      |\n");
+                        "\n" +
+                        "    Background: \n" +
+                        "        Given table:\n" +
+                        "            | a    | b    |\n" +
+                        "            | a1   |      |\n"
+        );
         testParse(
                 "Feature: XYZ\nBackground:\nGiven table:\n| a | b |\n|  | b1 |",
 
                 "Feature: XYZ\n" +
-                "\n" +
-                "    Background: \n" +
-                "        Given table:\n" +
-                "            | a    | b    |\n" +
-                "            |      | b1   |\n");
+                        "\n" +
+                        "    Background: \n" +
+                        "        Given table:\n" +
+                        "            | a    | b    |\n" +
+                        "            |      | b1   |\n"
+        );
 
         testParse(
                 "Feature: XYZ\nBackground:\nGiven table:\n| a | b |\n|  |  |",
 
                 "Feature: XYZ\n" +
-                "\n" +
-                "    Background: \n" +
-                "        Given table:\n" +
-                "            | a    | b    |\n" +
-                "            |      |      |\n");
+                        "\n" +
+                        "    Background: \n" +
+                        "        Given table:\n" +
+                        "            | a    | b    |\n" +
+                        "            |      |      |\n"
+        );
 
 
     }
@@ -128,20 +138,22 @@ public class GherkinParserTest {
                 "Feature: XYZ\nBackground:\nGiven table:\n| a | b |\n| a1 |a\\#b |",
 
                 "Feature: XYZ\n" +
-                "\n" +
-                "    Background: \n" +
-                "        Given table:\n" +
-                "            | a    | b    |\n" +
-                "            | a1   | a\\#b |\n");
+                        "\n" +
+                        "    Background: \n" +
+                        "        Given table:\n" +
+                        "            | a    | b    |\n" +
+                        "            | a1   | a\\#b |\n"
+        );
         testParse(
                 "Feature: XYZ\nBackground:\nGiven table:\n| a | b |\n| a1 |a\\|b |",
 
                 "Feature: XYZ\n" +
-                "\n" +
-                "    Background: \n" +
-                "        Given table:\n" +
-                "            | a    | b    |\n" +
-                "            | a1   | a\\|b |\n");
+                        "\n" +
+                        "    Background: \n" +
+                        "        Given table:\n" +
+                        "            | a    | b    |\n" +
+                        "            | a1   | a\\|b |\n"
+        );
 
 
     }
@@ -162,70 +174,74 @@ public class GherkinParserTest {
     public void testPyString() throws Exception {
         testParse(
                 "Feature: XYZ\n" +
-                "Scenario:\n" +
-                "When testing pyString:\n" +
-                "\"\"\"\n" +
-                "pystring\n" +
-                "\"\"\"\n" +
-                "",
+                        "Scenario:\n" +
+                        "When testing pyString:\n" +
+                        "\"\"\"\n" +
+                        "pystring\n" +
+                        "\"\"\"\n" +
+                        "",
 
                 "Feature: XYZ\n" +
-                "\n" +
-                "\n" +
-                "    Scenario: \n" +
-                "        When testing pyString:\n" +
-                "        \"\"\"\n" +
-                "        pystring\n" +
-                "        \"\"\"\n");
+                        "\n" +
+                        "\n" +
+                        "    Scenario: \n" +
+                        "        When testing pyString:\n" +
+                        "        \"\"\"\n" +
+                        "        pystring\n" +
+                        "        \"\"\"\n"
+        );
 
         testParse(
                 "Feature: XYZ\n" +
-                "Scenario:\n" +
-                "When testing pyString:\n" +
-                "\"\"\"\n" +
-                "pystring\n" +
-                "\"\"\"" +
-                "",
+                        "Scenario:\n" +
+                        "When testing pyString:\n" +
+                        "\"\"\"\n" +
+                        "pystring\n" +
+                        "\"\"\"" +
+                        "",
 
                 "Feature: XYZ\n" +
-                "\n" +
-                "\n" +
-                "    Scenario: \n" +
-                "        When testing pyString:\n" +
-                "        \"\"\"\n" +
-                "        pystring\n" +
-                "        \"\"\"\n");
+                        "\n" +
+                        "\n" +
+                        "    Scenario: \n" +
+                        "        When testing pyString:\n" +
+                        "        \"\"\"\n" +
+                        "        pystring\n" +
+                        "        \"\"\"\n"
+        );
         testParse(
                 "Feature: XYZ\n" +
-                "Scenario:\n" +
-                "When testing pyString:\n" +
-                "\"\"\"\n" +
-                "pystring\n" +
-                "\"\"\"    ",
+                        "Scenario:\n" +
+                        "When testing pyString:\n" +
+                        "\"\"\"\n" +
+                        "pystring\n" +
+                        "\"\"\"    ",
 
                 "Feature: XYZ\n" +
-                "\n" +
-                "\n" +
-                "    Scenario: \n" +
-                "        When testing pyString:\n" +
-                "        \"\"\"\n" +
-                "        pystring\n" +
-                "        \"\"\"\n");
+                        "\n" +
+                        "\n" +
+                        "    Scenario: \n" +
+                        "        When testing pyString:\n" +
+                        "        \"\"\"\n" +
+                        "        pystring\n" +
+                        "        \"\"\"\n"
+        );
         testParse(
                 "Feature: XYZ\n" +
-                "Scenario:\n" +
-                "When testing pyString:\n" +
-                "\"\"\"\n" +
-                "pystring\n",
+                        "Scenario:\n" +
+                        "When testing pyString:\n" +
+                        "\"\"\"\n" +
+                        "pystring\n",
 
                 "Feature: XYZ\n" +
-                "\n" +
-                "\n" +
-                "    Scenario: \n" +
-                "        When testing pyString:\n" +
-                "        \"\"\"\n" +
-                "        pystring\n" +
-                "        \"\"\"\n");
+                        "\n" +
+                        "\n" +
+                        "    Scenario: \n" +
+                        "        When testing pyString:\n" +
+                        "        \"\"\"\n" +
+                        "        pystring\n" +
+                        "        \"\"\"\n"
+        );
     }
 
 }

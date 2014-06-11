@@ -1,29 +1,26 @@
 package com.github.dokky.gherkin.parser.handler;
 
-import java.util.Arrays;
-import java.util.LinkedList;
-import java.util.List;
-
-import org.apache.commons.lang.StringUtils;
-
 import com.github.dokky.gherkin.lexer.GherkinLexer;
-import com.github.dokky.gherkin.parser.GherkinParseException;
+import com.github.dokky.gherkin.model.GherkinParseException;
+import com.github.dokky.gherkin.model.Table;
+import com.github.dokky.gherkin.model.TableRow;
 import com.github.dokky.gherkin.parser.GherkinParserHandler;
 import com.sun.istack.internal.Nullable;
+import org.apache.commons.lang.StringUtils;
 
-public class GherkinFilePrettyFormatter implements GherkinParserHandler {
-    private final static int    DEFAULT_BUFFER_SIZE = 350 * 1024;
-    private final static String IDENT               = "    ";
-    private final static String DOUBLE_IDENT        = IDENT + IDENT;
-    private final        char   EOL                 = '\n';
+public class GherkinPrettyFormatterHandler implements GherkinParserHandler {
+    private final static int DEFAULT_BUFFER_SIZE = 350 * 1024;
+    private final static String IDENT = "    ";
+    private final static String DOUBLE_IDENT = IDENT + IDENT;
+    private final char EOL = '\n';
 
     private StringBuilder out;
 
-    private boolean inFeature  = false;
+    private boolean inFeature = false;
     private boolean inScenario = false;
     private boolean inExamples = false;
 
-    private Table  table;
+    private TableWithColumnSizes table;
     private String tag;
 
     public String getResult() {
@@ -128,9 +125,9 @@ public class GherkinFilePrettyFormatter implements GherkinParserHandler {
     @Override
     public void onTableRow(String[] cells) {
         if (table == null) {
-            table = new Table(cells); // header
+            table = new TableWithColumnSizes(cells); // header
         } else {
-            table.add(cells); // rows with cells
+            table.addRow(cells); // rows with cells
         }
     }
 
@@ -203,7 +200,7 @@ public class GherkinFilePrettyFormatter implements GherkinParserHandler {
         if (table == null) {
             out.append(comment);
         } else {
-            table.add(comment, hasNewLineBefore);
+            table.addComment(comment, hasNewLineBefore);
         }
     }
 
@@ -233,23 +230,29 @@ public class GherkinFilePrettyFormatter implements GherkinParserHandler {
 
     private void flushTable() {
         if (table != null) {
-            for (Object rowOrComment : table.rows) {
-                if (rowOrComment instanceof String) {
-                    out.append(' ').append(((String) rowOrComment).trim());
-                } else if (rowOrComment instanceof String[]) {
-                    String[] cells = (String[]) rowOrComment;
-                    out.append(EOL);
-                    out.append(DOUBLE_IDENT);
-                    if (!inExamples) {
-                        out.append(IDENT);
-                    }
-                    for (int i = 0, columns = cells.length; i < columns; i++) {
-                        out.append(column(cells[i], table.sizes[i]));
-                    }
-                    out.append("|");
-                }
+            printRow(table.getHeadings());
+            for (TableRow rowWithComments : table.getRows()) {
+                printRow(rowWithComments);
             }
             table = null;
+        }
+    }
+
+    private void printRow(TableRow rowOrComment) {
+        String[] cells = rowOrComment.getCells();
+        out.append(EOL);
+        out.append(DOUBLE_IDENT);
+        if (!inExamples) {
+            out.append(IDENT);
+        }
+        for (int i = 0, columns = cells.length; i < columns; i++) {
+            out.append(column(cells[i], table.sizes[i]));
+        }
+        out.append("|");
+        if (!rowOrComment.getComments().isEmpty()) {
+            for (String comment : rowOrComment.getComments()) {
+                out.append(' ').append(comment.trim());
+            }
         }
     }
 
@@ -267,29 +270,17 @@ public class GherkinFilePrettyFormatter implements GherkinParserHandler {
         return column;
     }
 
-    @SuppressWarnings("unchecked")
-    private static class Table {
-        String[] header;
-        int[]    sizes;
-        List rows = new LinkedList<>();
+    private static class TableWithColumnSizes extends Table {
+        int[] sizes;
 
-        Table(String[] header) {
-            for (int i = 0; i < header.length; i++) {
-                if (header[i] == null || header[i].trim().isEmpty()) {
-                    throw new GherkinParseException("Empty header at position: " + (i + 1));
-                }
-            }
-            this.header = header;
-
+        public TableWithColumnSizes(String[] header) {
+            super(header);
             sizes = new int[header.length];
-            add(header);
         }
 
-        void add(String[] row) {
-            if (row.length != header.length) {
-                throw new GherkinParseException("row.length != header.length. Details: header: " + Arrays.toString(header) + " row: " + Arrays.toString(row));
-            }
-            rows.add(row);
+        public void addRow(String[] row) {
+            super.addRow(row);
+
             for (int i = 0; i < sizes.length; i++) {
                 sizes[i] = Math.max(sizes[i], row[i] == null ? 0 : row[i].length());
                 while (sizes[i] % 4 != 0) {
@@ -298,11 +289,11 @@ public class GherkinFilePrettyFormatter implements GherkinParserHandler {
             }
         }
 
-        void add(String comment, boolean hasNewLineBefore) {
+        void addComment(String comment, boolean hasNewLineBefore) {
             if (hasNewLineBefore) {
-                rows.add("\n");
+                getLastRow().getComments().add("\n");
             }
-            rows.add(comment);
+            getLastRow().getComments().add(comment);
         }
     }
 }

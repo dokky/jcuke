@@ -2,22 +2,49 @@ package com.github.dokky.gherkin.parser.handler;
 
 import com.github.dokky.gherkin.model.*;
 import com.github.dokky.gherkin.parser.GherkinParserHandler;
+import lombok.Getter;
 
-import java.util.ArrayList;
+import java.util.LinkedList;
 import java.util.List;
 
 public class GherkinModelParserHandler implements GherkinParserHandler {
-    private FeatureFile featureFile = new FeatureFile();
-    private List<Tag>   tags        = new ArrayList<Tag>();
-
-    public static final int DEFAULT          = 0;
-    public static final int FEATURE          = 1;
-    public static final int BACKGROUND       = 2;
-    public static final int SCENARIO         = 3;
+    // context types
+    public static final int DEFAULT = 0;
+    public static final int FEATURE = 1;
+    public static final int BACKGROUND = 2;
+    public static final int SCENARIO = 3;
     public static final int SCENARIO_OUTLINE = 4;
-    public static final int EXAMPLES         = 5;
+    public static final int EXAMPLES = 5;
 
-    private int context = DEFAULT;
+    @Getter
+    private FeatureFile featureFile;
+    private List<Tag> tags;
+    private int context;
+
+
+    @Override
+    public void start() {
+        featureFile = new FeatureFile();
+        tags = new LinkedList<>();
+        context = DEFAULT;
+    }
+
+    @Override
+    public void end() {
+    }
+
+    private Feature getFeature() {
+        return featureFile.getFeature();
+    }
+
+    private Step getLastStep() {
+        if (context == BACKGROUND) {
+            return getFeature().getBackground().getLastStep();
+        } else if (context == SCENARIO || context == SCENARIO_OUTLINE) {
+            return getFeature().getLastScenario().getLastStep();
+        }
+        return null;
+    }
 
     public void onFeature(String name, String description) {
         if (context == DEFAULT) {
@@ -71,6 +98,7 @@ public class GherkinModelParserHandler implements GherkinParserHandler {
         }
     }
 
+
     public void onStep(String stepType, String name) {
         if (context == BACKGROUND) {
             Step step = new Step(stepType, name);
@@ -80,7 +108,6 @@ public class GherkinModelParserHandler implements GherkinParserHandler {
             getFeature().getBackground().getSteps().add(step);
         }
     }
-
 
     public void onTableRow(String[] cells) {
         Table table = null;
@@ -144,24 +171,5 @@ public class GherkinModelParserHandler implements GherkinParserHandler {
 
     }
 
-    @Override
-    public void start() {
-    }
 
-    @Override
-    public void end() {
-    }
-
-    private Feature getFeature() {
-        return featureFile.getFeature();
-    }
-
-    private Step getLastStep() {
-        if (context == BACKGROUND) {
-            return getFeature().getBackground().getLastStep();
-        } else if (context == SCENARIO || context == SCENARIO_OUTLINE) {
-            return getFeature().getLastScenario().getLastStep();
-        }
-        return null;
-    }
 }

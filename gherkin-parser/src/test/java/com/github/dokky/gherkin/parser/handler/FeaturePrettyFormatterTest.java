@@ -1,17 +1,15 @@
-package com.github.dokky.gherkin.parser;
+package com.github.dokky.gherkin.parser.handler;
+
+import com.github.dokky.gherkin.FileUtils;
+import com.github.dokky.gherkin.parser.GherkinParser;
+import lombok.Data;
+import org.junit.Assert;
+import org.junit.Test;
 
 import java.io.File;
 import java.util.Iterator;
 import java.util.Set;
 import java.util.TreeSet;
-
-import lombok.Data;
-
-import org.junit.Assert;
-import org.junit.Test;
-
-import com.github.dokky.gherkin.FileUtils;
-import com.github.dokky.gherkin.parser.handler.GherkinFilePrettyFormatter;
 
 public class FeaturePrettyFormatterTest {
     @Test
@@ -24,8 +22,9 @@ public class FeaturePrettyFormatterTest {
     @Test
     public void testDir() {
 //        Set<File> files = new TreeSet<>(FileUtils.scanDirectory(new File("/home/stanislavd/workspace/techweb/bdd")));
-        Set<File> files = new TreeSet<>(FileUtils.scanDirectory(new File("/home/stanislavd/workspace/msdp/bdd/src/msdptest")));
+//        Set<File> files = new TreeSet<>(FileUtils.scanDirectory(new File("/home/stanislavd/workspace/msdp/bdd/src/msdptest")));
 //        Set<File> files = new TreeSet<>(FileUtils.scanDirectory(new File("bdd")));
+        Set<File> files = new TreeSet<>(FileUtils.scanDirectory(new File("D:\\projects\\msdp\\bdd\\src\\msdptest")));
         int i = 1;
         for (File file : files) {
             System.err.println("["+(i++)+"/"+files.size()+"]:"+file);
@@ -41,7 +40,7 @@ public class FeaturePrettyFormatterTest {
     }
 
     private String reformat(File file) {
-        GherkinFilePrettyFormatter handler = new GherkinFilePrettyFormatter();
+        GherkinPrettyFormatterHandler handler = new GherkinPrettyFormatterHandler();
         GherkinParser parser = new GherkinParser(handler);
 
         String original = FileUtils.readFile(file);
