@@ -22,15 +22,17 @@ import java.util.List;
 public class GherkinValidator {
 
 
-    public void validate(File directory, String[] extensions, boolean recursive) {
-        Collection<File> files = FileUtils.listFiles(directory, extensions, recursive);
+    public void validate(File inputDirectory, String[] extensions, boolean recursive) {
+        Collection<File> files = FileUtils.listFiles(inputDirectory, extensions, recursive);
         int i = 1;
         int errors = 0;
         Statistics stats = new Statistics();
         for (File file : files) {
 
             ValidationResult validationResult = validate(file);
-            updateStatistics(validationResult.featureFile, stats);
+            if (validationResult.featureFile != null) {
+                updateStatistics(validationResult.featureFile, stats);
+            }
 
             if (validationResult.status == ValidationResult.STATUS_FAILED) {
                 errors++;
@@ -53,7 +55,7 @@ public class GherkinValidator {
 
     }
 
-    private ValidationResult validate(File file) {
+    public ValidationResult validate(File file) {
         ValidationResult result = new ValidationResult(file);
 
         try {
@@ -63,8 +65,8 @@ public class GherkinValidator {
             GherkinParser parser = new GherkinParser(handler);
             parser.parse(original);
             FeatureFile featureFile = handler.getFeatureFile();
+            featureFile.validate();
             result.featureFile = featureFile;
-
 
         } catch (Throwable e) {
             result.status = ValidationResult.STATUS_FAILED;
@@ -85,7 +87,12 @@ public class GherkinValidator {
         for (Scenario scenario : feature.getScenarios()) {
             if (scenario instanceof ScenarioOutline) {
                 ScenarioOutline scenarioOutline = (ScenarioOutline) scenario;
-                int examplesCount = scenarioOutline.getExamples().getTable().getRows().size();
+                int examplesCount = 0;
+                try {
+                    examplesCount = scenarioOutline.getExamples().getTable().getRows().size();
+                } catch (Exception e) {
+                    // badly formatted
+                }
                 stats.totalScenarios += examplesCount;
                 totalScenariosInFeature += examplesCount;
                 stats.steps += scenario.getSteps().size() + examplesCount;
@@ -102,7 +109,7 @@ public class GherkinValidator {
     }
 
     @Data
-    private final static class ValidationResult {
+    final static class ValidationResult {
         public final static String STATUS_OK = "OK";
         public final static String STATUS_FAILED = "FAILED";
 
@@ -115,7 +122,7 @@ public class GherkinValidator {
         @Override
         public String toString() {
             StringBuilder sb = new StringBuilder();
-            sb.append(file.getAbsolutePath()).append(": ").append(status);
+            sb.append(file.toURI()).append(" : ").append(status);
             if (!errorMessages.isEmpty()) {
                 sb.append("\nErrors:");
                 for (String errorMessage : errorMessages) {

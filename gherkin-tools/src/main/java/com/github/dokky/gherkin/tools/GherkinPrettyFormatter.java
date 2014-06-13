@@ -14,15 +14,19 @@ import java.util.LinkedList;
 import java.util.List;
 
 
-public class GherkinPrettyFormater {
+public class GherkinPrettyFormatter {
 
 
-    public void format(File directory, String[] extensions, boolean recursive) {
-        Collection<File> files = FileUtils.listFiles(directory, extensions, recursive);
+    public void format(File inputDirectory, File outputDirectory, String[] extensions, boolean recursive) {
+        if (!outputDirectory.isDirectory()) {
+            throw new IllegalArgumentException("Parameter 'outputDirectory' is not a directory");
+        }
+
+        Collection<File> files = FileUtils.listFiles(inputDirectory, extensions, recursive);
         int i = 1;
         int errors = 0;
         for (File file : files) {
-            ValidationResult validationResult = format(file);
+            ValidationResult validationResult = format(file, getOutputFile(inputDirectory, file, outputDirectory));
 
             if (validationResult.status == ValidationResult.STATUS_FAILED) {
                 errors++;
@@ -39,11 +43,11 @@ public class GherkinPrettyFormater {
 
     }
 
-    private ValidationResult format(File file) {
-        ValidationResult result = new ValidationResult(file);
+    private ValidationResult format(File inputFile, File outputFile) {
+        ValidationResult result = new ValidationResult(inputFile);
 
         try {
-            String original = FileUtils.readFileToString(file);
+            String original = FileUtils.readFileToString(inputFile);
 
             GherkinPrettyFormatterHandler handler = new GherkinPrettyFormatterHandler();
             GherkinParser parser = new GherkinParser(handler);
@@ -53,7 +57,7 @@ public class GherkinPrettyFormater {
             if (!removeWhitespaces(original).equals(removeWhitespaces(formatted))) {
                 throw new ParseException("Parsed content differs from original", -1);
             }
-            FileUtils.write(file, formatted);
+            FileUtils.write(outputFile, formatted);
         } catch (Throwable e) {
             result.status = ValidationResult.STATUS_FAILED;
             result.errorMessages.add(e.getMessage());
@@ -67,6 +71,10 @@ public class GherkinPrettyFormater {
         return original.replaceAll("\\s+", "");
     }
 
+    private static File getOutputFile(File inputDirectory, File inputFile, File outputDirectory) {
+        String relative = inputDirectory.toURI().relativize(inputFile.toURI()).getPath();
+        return new File(outputDirectory, relative);
+    }
 
     @Data
     private final static class ValidationResult {
@@ -94,10 +102,12 @@ public class GherkinPrettyFormater {
 
     public static void main(String[] args) {
 
-
         class Parameters {
             @Parameter(names = "-dir", required = true, echoInput = true)
             String dir;
+
+            @Parameter(names = "-out", required = true, echoInput = true)
+            String out;
 
             @Parameter(names = "-extensions", required = false, echoInput = true, description = "Gherkin file extensions. Default: feature")
             String[] extensions = {"feature"};
@@ -111,7 +121,7 @@ public class GherkinPrettyFormater {
 
         JCommander jCommander = new JCommander(parameters, args);
 
-        GherkinPrettyFormater validator = new GherkinPrettyFormater();
-        validator.format(new File(parameters.dir), parameters.extensions, parameters.recursive);
+        GherkinPrettyFormatter validator = new GherkinPrettyFormatter();
+        validator.format(new File(parameters.dir), new File(parameters.out), parameters.extensions, parameters.recursive);
     }
 }
