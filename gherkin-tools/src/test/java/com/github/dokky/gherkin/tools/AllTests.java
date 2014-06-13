@@ -9,6 +9,7 @@ public class AllTests {
         TestSuite suite = new TestSuite();
         //$JUnit-BEGIN$
         suite.addTest(new GherkinValidatorTestSuite());
+        suite.addTest(new GherkinFormatterTestSuite());
         //$JUnit-END$
         return suite;
     }

@@ -26,13 +26,13 @@ public class GherkinPrettyFormatter {
         int i = 1;
         int errors = 0;
         for (File file : files) {
-            ValidationResult validationResult = format(file, getOutputFile(inputDirectory, file, outputDirectory));
+            ReformatResult reformatResult = format(file, getOutputFile(inputDirectory, file, outputDirectory));
 
-            if (validationResult.status == ValidationResult.STATUS_FAILED) {
+            if (reformatResult.status == ReformatResult.STATUS_FAILED) {
                 errors++;
-                System.err.println("[" + (i++) + "/" + files.size() + "]:" + validationResult);
+                System.err.println("[" + (i++) + "/" + files.size() + "]:" + reformatResult);
             } else {
-                System.out.println("[" + (i++) + "/" + files.size() + "]:" + validationResult);
+                System.out.println("[" + (i++) + "/" + files.size() + "]:" + reformatResult);
             }
         }
         if (errors > 0) {
@@ -43,8 +43,8 @@ public class GherkinPrettyFormatter {
 
     }
 
-    private ValidationResult format(File inputFile, File outputFile) {
-        ValidationResult result = new ValidationResult(inputFile);
+    ReformatResult format(File inputFile, File outputFile) {
+        ReformatResult result = new ReformatResult(inputFile);
 
         try {
             String original = FileUtils.readFileToString(inputFile);
@@ -57,9 +57,10 @@ public class GherkinPrettyFormatter {
             if (!removeWhitespaces(original).equals(removeWhitespaces(formatted))) {
                 throw new ParseException("Parsed content differs from original", -1);
             }
+            result.formatted = formatted;
             FileUtils.write(outputFile, formatted);
         } catch (Throwable e) {
-            result.status = ValidationResult.STATUS_FAILED;
+            result.status = ReformatResult.STATUS_FAILED;
             result.errorMessages.add(e.getMessage());
             e.printStackTrace();
         }
@@ -77,13 +78,14 @@ public class GherkinPrettyFormatter {
     }
 
     @Data
-    private final static class ValidationResult {
+    final static class ReformatResult {
         public final static String STATUS_OK = "OK";
         public final static String STATUS_FAILED = "FAILED";
 
         final File file;
         String status = STATUS_OK;
         List<String> errorMessages = new LinkedList<>();
+        String formatted;
 
 
         @Override
